@@ -8,14 +8,25 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
 {
     public class FileSystemWebhookStore : IWebhookStore
     {
+        public static string StorePath { get; set; }
+
         public void Store(Webhook webhook)
         {
+            if (StorePath == null) return;
+
+            Directory.CreateDirectory(StorePath);
+
             var serializer = new JsonSerializer();
-            File.WriteAllText(Path.Combine(@"C:\Users\deane\Dropbox\Deane\DEsktop\Episerver Sites\Ayogo3\App_Data\webhooks", webhook.Id + ".json"), serializer.Serialize(new StorableWebhook(webhook)));
+            File.WriteAllText(Path.Combine(StorePath, GetFileName(webhook)), serializer.Serialize(new StorableWebhook(webhook)));
+        }
+
+        protected string GetFileName(Webhook webhook)
+        {
+            return string.Concat(webhook.Id.ToString(), ".json");
         }
 
         // This exists just so we can have more careful control of how it's serialized (in particular, we don't want to serialize a full IContent object...)
-        private class StorableWebhook
+        protected class StorableWebhook
         {
             private Webhook webhook;
             public Guid id => webhook.Id;

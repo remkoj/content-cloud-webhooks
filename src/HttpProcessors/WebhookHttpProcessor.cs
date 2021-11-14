@@ -22,7 +22,7 @@ namespace DeaneBarker.Optimizely.Webhooks.HttpProcessors
             }
         }
 
-        // I broke this out to its own method so that if someone inherits this class and overrides Process, they can still use this
+        // I broke this out to its own method so that if someone inherits this class and overrides Process, they don't have to figure out this code
         protected string GetResponseContent(HttpWebResponse response)
         {
             var responseStream = new StreamReader(response.GetResponseStream());

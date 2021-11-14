@@ -6,10 +6,6 @@ using EPiServer.Core;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.ServiceLocation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -19,19 +15,34 @@ namespace DeaneBarker.Optimizely.Webhooks
     {
         public void ConfigureContainer(ServiceConfigurationContext context)
         {
+            // This manages the entire webhook process
+            // All other services are injected into this one
+            // This is where the event handlers are located, and the queue that holds the pending webhooks
+            context.Services.AddSingleton<IWebhookManager, WebhookManager>();
+
+            // This determines the URL to send the request to
+            // This is where you set all the logic to "route" your webhook; if you return NULL from "Route," the webhook will abandon (it just won't be put in queue)
+            // If you only have one URL, just set that on WebhookManager master and the default router will use it from there
+            context.Services.AddSingleton<IWebhookRouter, WebhookRouter>();
+
+            // This turns the webhook into an HttpWebRequest
+            // This is where you would manipulate the URL or add custom headers or whatever
+            context.Services.AddSingleton<IWebhookSerializer, WebhookSerializer>();
+
+            // This makes the actual HTTP call
+            // I broke this out to its own service so it could be mocked -- I needed a way to test if the call failed
             context.Services.AddSingleton<IWebhookHttpProcessor, WebhookHttpProcessor>();
             //context.Services.AddSingleton<IWebhookHttpProcessor, UnstableWebhookHttpProcessor>();
+
+            // This persists the webhook and its history to some data source
             context.Services.AddSingleton<IWebhookStore, FileSystemWebhookStore>();
-            context.Services.AddSingleton<IWebhookManager, WebhookManager>();
-            context.Services.AddSingleton<IWebhookSerializer, WebhookSerializer>();
-            context.Services.AddSingleton<IWebhookRouter, WebhookRouter>();
         }
 
         public void Initialize(InitializationEngine context)
         {
-            var contentEvents = ServiceLocator.Current.GetInstance<IContentEvents>();
             var webhookManager = ServiceLocator.Current.GetInstance<IWebhookManager>();
 
+            var contentEvents = ServiceLocator.Current.GetInstance<IContentEvents>();
             contentEvents.PublishedContent += webhookManager.QueuePublishedWebhook;
             contentEvents.MovedContent += webhookManager.QueueMovedWebhook;
             contentEvents.DeletedContent += webhookManager.QueueDeletedWebhook;
