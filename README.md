@@ -129,6 +129,14 @@ On `WebhookManager`, you can set the following static properties:
 
 By default, `WebhookManager` will create one worker thread. If you desire more, you can call `WebhookManager.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but you will increase load on your endpoint.
 
+If you want to limit your webhooks to just certain types, you can set static property `WebhookRouter.OnlyForTypes` to a collection of the types you want to allow webhooks for:
+
+```
+WebhookRouter.OnlyForTypes = new[] { typeof(ArticlePage), typeof(ProductPage) };
+```
+
+(Again, this is in the default implementation. If you re-implement `IWebhookRouter`, then this is on you to retain or discard.)
+
 By default, webhooks are persisted to memory. If you want to persist them to the file system, change the `IWebhookStore` service injection to use `FileSystemWebhookStore` and set the `FileSystemWebhookStore.StorePath` static property.
 
 ## To Inject Your Own Services
