@@ -29,7 +29,9 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
         protected class StorableWebhook
         {
             private Webhook webhook;
+            
             public Guid id => webhook.Id;
+            public DateTime created => webhook.Created;
             public string target => webhook.Target.AbsoluteUri;
             public ContentReference contentLink => webhook.ContentLink;
             public string action => webhook.Action;
