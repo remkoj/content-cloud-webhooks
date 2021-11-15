@@ -1,4 +1,5 @@
-﻿using EPiServer.ContentApi.Core.ContentResult.Internal;
+﻿using DeaneBarker.Optimizely.Webhooks.Helpers;
+using EPiServer.ContentApi.Core.ContentResult.Internal;
 using EPiServer.ContentApi.Core.Serialization;
 using EPiServer.Core;
 using EPiServer.ServiceLocation;
@@ -11,7 +12,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
         public HttpWebRequest Serialize(Webhook webhook)
         {
             // SimplePostRequest is an easy way to construct a request
-            var request = new SimplePostRequest(webhook.Target, SerializeIContent(webhook.Content));
+            var request = new PostRequest(webhook.Target, SerializeIContent(webhook.Content));
             request.AddArg("action", webhook.Action);
 
             return request.GetHttpWebRequest();
