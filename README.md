@@ -95,16 +95,60 @@ When a UI is created, more methods will be created for this which will allow lis
 
 This is the basic flow. A lot of this is dependent on the default implementation of services. If you inject your own implementation, things could be different.
 
+1. Your app starts up, and `WebhooksInit`:
+   * Injects all the services as singletons
+   * Binds the event handlers
 1. A content operation occurs in Content Cloud and an event is raised
 3. The event handler on `IWebhookManager`:
    * Creates a `Webhook` object
    * Populates a URL target from `IWebhookRouter`
+   * Puts it in the queue (assuming a URL was returned from `IWebhookRouter`; if `null` was returned, the webhook is abandoned)
    * Passes it to `IWebhookStore` to persist it
-   * Puts it in the queue
 4. The `Webhook` object is found in the queue by the worker thread
 5. The worker thread passes the webhook to `IWebhookSerializer` and gets an `HttpWebRequest` back
 6. The worker thread passes the `HttpWebRequest` to `IWebhookHttpProcessor` and gets back a `WebhookAttempt`
 7. The worker thread attaches the `WebhookAttempt` to the history of `Webhook`
 8. The worker thread passes the `Webhook` to `IWebhookStore` to persist it
-9. If the webhook execution failed, the worker thread sets a timer for the default retry delay, then places the `Webhook` back in the queue
+   * If the webhook execution succeeded, we're all done 
+   * If the webhook execution failed, the worker thread might set a timer for the default retry delay, then place the `Webhook` back in the queue (this depends on the settings)
 10. The worker thread waits the specified throttle time delay, then waits for a new object in the queue
+
+## To Install and Configure
+
+Compile the code into your project.
+
+Somewhere in your startup code, set the static `WebhookManager.Target` property to your webhook target.
+
+(If you don't do this, the event handlers will execute, but `WebhookRouter` will return `null` so no webhooks will queue. This is effectively a "switch" to turn webhooks on and off.)
+
+On `WebhookManager`, you can set the following static properties:
+
+* `MaxAttempts` (default: 5): The maximum number of times a webhook should execute. If it fails on every attempt, it will abandon
+* `DelayBetweenRetries` (default: 10 seconds): The number of milliseconds the worker should wait before putting a failed webhook back in queue
+* `Throttle` (default: 1 second): The number of milliseconds each worker thread should wait before retrieving a new webhook from the queue
+
+By default, `WebhookManager` will create one worker thread. If you desire more, you can call `WebhookManager.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but you will increase load on your endpoint.
+
+By default, webhooks are persisted to memory. If you want to persist them to the file system, change the `IWebhookStore` service injection to use `FileSystemWebhookStore` and set the `FileSystemWebhookStore.StorePath` static property.
+
+## To Inject Your Own Services
+
+If you re-implement any services, they must be injected _after_ `WebhooksInit` has run, or they will be over-written. To do this, put a `ModuleDependency` on your initialization code:
+
+```
+[InitializableModule]
+[ModuleDependency(typeof(WebhooksInit))]
+public class MyWebhooksInit : IConfigurableModule
+{
+    public void ConfigureContainer(ServiceConfigurationContext context)
+    {
+        context.Services.AddSingleton<IWebhookRouter, MyWebhookRouter>();
+    }
+
+    public void Initialize(InitializationEngine context) { }
+
+    public void Uninitialize(InitializationEngine context) { }
+}
+```
+
+This will wait until `WebhooksInit` has executed, then overwrite *those* services with your own implementations.
