@@ -19,6 +19,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         private readonly List<WebhookAttempt> history = new List<WebhookAttempt>();
 
         public Guid Id { get; private set; }
+        public DateTime Created { get; private set; }
         public IContent Content { get; private set; }
         public ContentReference ContentLink => Content.ContentLink;
         public Uri Target { get; private set; }
@@ -30,6 +31,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public Webhook(IContent content, Uri target, string action)
         {
             Id = Guid.NewGuid();
+            Created = DateTime.Now;
             Content = content;
             Target = target ?? throw new ArgumentNullException(nameof(target));
             Action = action;
