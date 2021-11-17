@@ -60,12 +60,20 @@ Once a `Webhook` has succeeded (the last `WebhookAttempt` in its `History` was s
 
 ### IWebhookRouter
 
-This determines two things:
+This calls all registered `IWebhookRoutingProfiles` serially. It returns the first one that returns something other than `null`, or `null` if none of them do.
 
-1. Should the webhook execute at all?
-2. What URL should the webhook target?
+### IWebhookRoutingProfile
 
-The interface contains one method: `Route` which returns a `Uri`. The default implementation simply returns the setting of `WebhookMaster.Target` in all cases.
+The interface contains one method: `Route` which returns a `Uri`.
+
+The default implementation requires you to pass in a target `Uri` and allows you to set the following:
+
+* *IncludeTypes:* A list of content types that _should_ generate a webhook.
+* *ExcludeTypes:* A list of content types that _should not_ generate a webhook.
+* *IncludeActions:* A list of action strings that _should_ generate a webhook.
+* *ExcludeActions:* A list of action strings that _should not_ generate a webhook.
+
+The exclusions are primary -- if a type of action string is excluded, it will negate the webhook even if that type or action is included later. Inclusions are optional -- if they are not set, it's assumed that *everything* should generate a webhook.
 
 You can re-implement and return whatever URL you need based on the content, the operation, or any other criteria.
 

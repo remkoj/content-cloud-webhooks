@@ -8,8 +8,6 @@ namespace DeaneBarker.Optimizely.Webhooks
 {
     public class WebhookManager : IWebhookManager
     {
-        public static string Target { get; set; }
-
         // This is all injected
         private readonly IWebhookRouter router;
         private readonly IContentLoader contentLoader;

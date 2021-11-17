@@ -40,6 +40,8 @@ namespace DeaneBarker.Optimizely.Webhooks
 
             // This holds the pending webhooks and manages the process that works them
             context.Services.AddSingleton<IWebhookQueue, InMemoryWebhookQueue>();
+
+            context.Services.AddSingleton<WebhookSettings, WebhookSettings>();
         }
 
         public void Initialize(InitializationEngine context)
