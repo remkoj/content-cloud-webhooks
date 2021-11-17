@@ -36,9 +36,13 @@ By default, event handlers are attached to:
 
 Note that `ContentMoved` covers "soft deletes" as well, since those are technically just moves to the wastebasket.
 
-The event handlers will create an `Webhook` object, populating target URL (via the `IWebhookRouter`), and place the webhook in the queue.
+The event handlers will create an `Webhook` object, populating target URL (via the `IWebhookRouter`), and place the webhook in the `IWebhookQueue`.
 
-When the default `WebhookManager` is created, a separate thread is launched to watch the queue. It retrieves a webhook, creates a web request via the `IWebhookSerializer`, then executes it via the `IWebhookHttpProcessor` and stores the result. If the webhook fails, it might be abandoned or placed back in queue after a delay, depending on the retry settings.
+### IWebhookQueue
+
+This is the pool of pending webhooks. It is responsible for holding the webhooks and launching and managing a process to work through them.
+
+The default `InMemoryWebhookQueue` creates a blocking collection that holds webhooks, and launches a background thread to work them serially.
 
 ### Webhook and WebhookAttempt
 
@@ -48,7 +52,7 @@ This represents a single webhook generated from an event. A webhook contains the
 * The content object that generated the webhook
 * A string representing the action that generated it ("Published", "Deleted", etc.)
 
-Webhooks are placed in the `IWebhookMaster` queue, and are worked serially.
+Webhooks are placed in the `IWebhookQueue`. That object is responsible for working the queue and executing the webhooks.
 
 A `Webhook` will generate a HTTP request when it is executed, and the results of that will be placed in its `History` property. If the HTTP request fails (returns any status code other than 200), the webhook might be retried several times. Each time will generate another `WebhookAttempt` record.
 
@@ -102,16 +106,17 @@ This is the basic flow. A lot of this is dependent on the default implementation
 3. The event handler on `IWebhookManager`:
    * Creates a `Webhook` object
    * Populates a URL target from `IWebhookRouter`
-   * Puts it in the queue (assuming a URL was returned from `IWebhookRouter`; if `null` was returned, the webhook is abandoned)
+   * Adds the webhook to the `IWebhookQueue` (assuming a URL was returned from `IWebhookRouter`; if `null` was returned, the webhook is abandoned)
+4. When addd to `IWebhookQueue`, that object:
    * Passes it to `IWebhookStore` to persist it
-4. The `Webhook` object is found in the queue by the worker thread
-5. The worker thread passes the webhook to `IWebhookSerializer` and gets an `HttpWebRequest` back
-6. The worker thread passes the `HttpWebRequest` to `IWebhookHttpProcessor` and gets back a `WebhookAttempt`
-7. The worker thread attaches the `WebhookAttempt` to the history of `Webhook`
-8. The worker thread passes the `Webhook` to `IWebhookStore` to persist it
-   * If the webhook execution succeeded, we're all done 
-   * If the webhook execution failed, the worker thread might set a timer for the default retry delay, then place the `Webhook` back in the queue (this depends on the settings)
-10. The worker thread waits the specified throttle time delay, then waits for a new object in the queue
+   * `Webhook` object is found in the queue by the worker thread
+   * The worker thread passes the webhook to `IWebhookSerializer` and gets an `HttpWebRequest` back
+   * The worker thread passes the `HttpWebRequest` to `IWebhookHttpProcessor` and gets back a `WebhookAttempt`
+   * The worker thread attaches the `WebhookAttempt` to the history of `Webhook`
+   * The worker thread passes the `Webhook` to `IWebhookStore` to persist it
+      * If the webhook execution succeeded, we're all done 
+      * If the webhook execution failed, the worker thread might set a timer for the default retry delay, then place the `Webhook` back in the queue (this depends on the settings)
+   * The worker thread waits the specified throttle time delay, then waits for a new object in the queue
 
 ## To Install and Configure
 
@@ -121,13 +126,13 @@ Somewhere in your startup code, set the static `WebhookManager.Target` property 
 
 (If you don't do this, the event handlers will execute, but `WebhookRouter` will return `null` so no webhooks will queue. This is effectively a "switch" to turn webhooks on and off.)
 
-On `WebhookManager`, you can set the following static properties:
+On `InMemoryWebhookQueue`, you can set the following static properties:
 
 * `MaxAttempts` (default: 5): The maximum number of times a webhook should execute. If it fails on every attempt, it will abandon
 * `DelayBetweenRetries` (default: 10 seconds): The number of milliseconds the worker should wait before putting a failed webhook back in queue
 * `Throttle` (default: 1 second): The number of milliseconds each worker thread should wait before retrieving a new webhook from the queue
 
-By default, `WebhookManager` will create one worker thread. If you desire more, you can call `WebhookManager.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but you will increase load on your endpoint.
+By default, `InMemoryWebhookQueue` will create one worker thread. If you desire more, you can call `InMemoryWebhookQueue.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but you will increase load on your endpoint.
 
 If you want to limit your webhooks to just certain types, you can set static property `WebhookRouter.OnlyForTypes` to a collection of the types you want to allow webhooks for:
 
