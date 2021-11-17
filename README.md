@@ -75,7 +75,21 @@ The default implementation requires you to pass in a target `Uri` and allows you
 
 The exclusions are primary -- if a type of action string is excluded, it will negate the webhook even if that type or action is included later. Inclusions are optional -- if they are not set, it's assumed that *everything* should generate a webhook.
 
-You can re-implement and return whatever URL you need based on the content, the operation, or any other criteria.
+The system only works at the interface level. If you want custom logic, it's easy to reimplement
+
+```
+public class MyRoutingProfile : IRoutingProfile
+{
+    public Uri Route(IContent content, string action)
+    {
+        // Allow webhooks in the bottom half of each minute
+        return DateTime.Now.Seconds > 30 ? new Uri("http://webhook.com/") : null;
+    }
+}
+
+var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
+settings.RoutingProfiles.Add(new MyRoutingProfile());
+```
 
 If you want to cancel a webhook altogether, return `null`. The webhook won't be placed in queue and will eventually be garbage collected.
 
