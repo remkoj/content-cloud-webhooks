@@ -142,11 +142,16 @@ This is the basic flow. A lot of this is dependent on the default implementation
 
 ## To Install and Configure
 
-Compile the code into your project.
+Compile the code into your project. This is not a complete VS project -- there is no product or solution file. The code is simply the class files, with no external dependencies or required Nuget packages.
 
-Somewhere in your startup code, set the static `WebhookManager.Target` property to your webhook target.
+Add a single routing profile to the settings:
 
-(If you don't do this, the event handlers will execute, but `WebhookRouter` will return `null` so no webhooks will queue. This is effectively a "switch" to turn webhooks on and off.)
+```
+var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
+settings.Add(new WebhookRoutingProfile("http://webhook.com"));
+```
+
+That is enough to have the system start generating and processing webhooks.
 
 On `InMemoryWebhookQueue`, you can set the following static properties:
 
@@ -154,15 +159,7 @@ On `InMemoryWebhookQueue`, you can set the following static properties:
 * `DelayBetweenRetries` (default: 10 seconds): The number of milliseconds the worker should wait before putting a failed webhook back in queue
 * `Throttle` (default: 1 second): The number of milliseconds each worker thread should wait before retrieving a new webhook from the queue
 
-By default, `InMemoryWebhookQueue` will create one worker thread. If you desire more, you can call `InMemoryWebhookQueue.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but you will increase load on your endpoint.
-
-If you want to limit your webhooks to just certain types, you can set static property `WebhookRouter.OnlyForTypes` to a collection of the types you want to allow webhooks for:
-
-```
-WebhookRouter.OnlyForTypes = new[] { typeof(ArticlePage), typeof(ProductPage) };
-```
-
-(Again, this is in the default implementation. If you re-implement `IWebhookRouter`, then this is on you to retain or discard.)
+By default, `InMemoryWebhookQueue` will create one worker thread. If you desire more, you can call `InMemoryWebhookQueue.StartWatcher(int count)` and start as many as you like. The queue is thread-safe, but this will increase load on your endpoint.
 
 By default, webhooks are persisted to memory. If you want to persist them to the file system, change the `IWebhookStore` service injection to use `FileSystemWebhookStore` and set the `FileSystemWebhookStore.StorePath` static property.
 

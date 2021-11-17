@@ -14,6 +14,11 @@ namespace DeaneBarker.Optimizely.Webhooks.Routers
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
 
+        public WebhookRoutingProfile(string target)
+        {
+            this.target = new Uri(target);
+        }
+
         public WebhookRoutingProfile(Uri target)
         {
             this.target = target;
