@@ -1,4 +1,5 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
+using DeaneBarker.Optimizely.Webhooks.Queues;
 using DeaneBarker.Optimizely.Webhooks.Routers;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
@@ -17,7 +18,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         {
             // This manages the entire webhook process
             // All other services are injected into this one
-            // This is where the event handlers are located, and the queue that holds the pending webhooks
+            // This is where the event handlers are located
             context.Services.AddSingleton<IWebhookManager, WebhookManager>();
 
             // This determines the URL to send the request to
@@ -36,6 +37,9 @@ namespace DeaneBarker.Optimizely.Webhooks
 
             // This persists the webhook and its history to some data source
             context.Services.AddSingleton<IWebhookStore, FileSystemWebhookStore>();
+
+            // This holds the pending webhooks and manages the process that works them
+            context.Services.AddSingleton<IWebhookQueue, InMemoryWebhookQueue>();
         }
 
         public void Initialize(InitializationEngine context)
@@ -50,8 +54,8 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Uninitialize(InitializationEngine context)
         {
-            var webhookManager = ServiceLocator.Current.GetInstance<IWebhookManager>(); // This is registered as a Singleton, so this should get the same instance where the thread were defined
-            webhookManager.Dispose();
+            var webhookQueue = ServiceLocator.Current.GetInstance<IWebhookQueue>(); // This is registered as a Singleton, so this should get the same instance where the thread were defined
+            webhookQueue.Dispose();
         }
     }
 }

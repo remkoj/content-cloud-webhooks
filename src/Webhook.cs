@@ -1,16 +1,8 @@
-﻿using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
-using DeaneBarker.Optimizely.Webhooks.Serializers;
-using EPiServer;
-using EPiServer.ContentApi.Core.ContentResult.Internal;
-using EPiServer.ContentApi.Core.Serialization;
-using EPiServer.Core;
-using EPiServer.ServiceLocation;
+﻿using EPiServer.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text.Json.Serialization;
-using System.Web;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
