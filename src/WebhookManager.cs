@@ -30,13 +30,13 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Queue(IContent content, string action = "none")
         {
-            if (content == null) return;
+            if (content == null) return; // I don't think this should ever be NULL, honestly...
 
             var target = router.Route(content, action);
             if (target == null) return; // If the router returns NULL, that means "Skip this..."
 
             // We copy the target URL in, because it should be an immutable historical record of what the target was when the webhook was run
-            var webhook = new Webhook(content, new Uri(Target), action);
+            var webhook = new Webhook(content, target, action);
             queue.Add(webhook);
         }
 
