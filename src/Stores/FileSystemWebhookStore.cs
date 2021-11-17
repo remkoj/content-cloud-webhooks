@@ -35,6 +35,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
             public string target => webhook.Target.AbsoluteUri;
             public ContentReference contentLink => webhook.ContentLink;
             public string action => webhook.Action;
+            
             public ReadOnlyCollection<WebhookAttempt> history => webhook.History;
 
             public StorableWebhook(Webhook _webhook)

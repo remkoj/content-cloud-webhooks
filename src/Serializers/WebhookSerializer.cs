@@ -11,11 +11,15 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
     {
         public HttpWebRequest Serialize(Webhook webhook)
         {
-            // SimplePostRequest is an easy way to construct a request
-            var request = new PostRequest(webhook.Target, SerializeIContent(webhook.Content));
-            request.AddArg("action", webhook.Action);
+            var requestBody = SerializeIContent(webhook.Content);
 
-            return request.GetHttpWebRequest();
+            var request = new WebRequestBuilder()
+                .AsPost()
+                .ToUrl(webhook.Target)
+                .WithBody(requestBody)
+                .WithQuerystringArg("action", webhook.Action);
+
+            return request.Build();
         }
 
         // I broke this out to its own method so that if someone inherits this class and overrides Serialize, they don't have to figure out this code
