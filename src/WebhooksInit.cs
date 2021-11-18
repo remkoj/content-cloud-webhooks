@@ -1,6 +1,5 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
 using DeaneBarker.Optimizely.Webhooks.Queues;
-using DeaneBarker.Optimizely.Webhooks.Routers;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
 using EPiServer.Core;
@@ -21,11 +20,6 @@ namespace DeaneBarker.Optimizely.Webhooks
             // This is where the event handlers are located
             context.Services.AddSingleton<IWebhookManager, WebhookManager>();
 
-            // This determines the URL to send the request to
-            // This is where you set all the logic to "route" your webhook; if you return NULL from "Route," the webhook will abandon (it just won't be put in queue)
-            // If you only have one URL, just set that on WebhookManager master and the default router will use it from there
-            context.Services.AddSingleton<IWebhookRouter, WebhookRouter>();
-
             // This turns the webhook into an HttpWebRequest
             // This is where you would manipulate the URL or add custom headers or whatever
             context.Services.AddSingleton<IWebhookSerializer, WebhookSerializer>();
@@ -41,7 +35,11 @@ namespace DeaneBarker.Optimizely.Webhooks
             // This holds the pending webhooks and manages the process that works them
             context.Services.AddSingleton<IWebhookQueue, InMemoryWebhookQueue>();
 
+            // Holds various settings
             context.Services.AddSingleton<WebhookSettings, WebhookSettings>();
+
+            // Executes all the IWebhookFactoryProfiles to produce webhooks
+            context.Services.AddSingleton<WebhookFactory, WebhookFactory>();
         }
 
         public void Initialize(InitializationEngine context)

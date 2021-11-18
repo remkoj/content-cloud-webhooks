@@ -52,7 +52,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
                         logger.Debug($"Retrieved webhook from queue {webhook.ToLogString()}; attempt {webhook.AttemptCount+1} of {MaxAttempts}");
 
                         // This triggers the actual execution
-                        var request = serializer.Serialize(webhook);
+                        var request = webhook.Serializer.Serialize(webhook);
                         var result = httpProcessor.Process(request);
                         logger.Debug($"Webhook attempt created; status: {result.StatusCode}; length: {result.Result.Length} {webhook.ToLogString()}");
                         webhook.AddHistory(result);

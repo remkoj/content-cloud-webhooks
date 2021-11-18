@@ -1,13 +1,12 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Routers;
-using System;
+﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
+using EPiServer.ServiceLocation;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
     public class WebhookSettings
     {
-        public List<IWebhookRoutingProfile> RoutingProfiles { get; set; } = new List<IWebhookRoutingProfile>();
+        public List<IWebhookFactoryProfile> FactoryProfiles { get; set; } = new List<IWebhookFactoryProfile>();
+        public IWebhookSerializer DefaultSerializer { get; set; } = ServiceLocator.Current.GetInstance<IWebhookSerializer>();
     }
 }

@@ -1,9 +1,7 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Queues;
-using DeaneBarker.Optimizely.Webhooks.Routers;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Logging;
-using System;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -12,15 +10,15 @@ namespace DeaneBarker.Optimizely.Webhooks
         private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookManager));
 
         // This is all injected
-        private readonly IWebhookRouter router;
         private readonly IContentLoader contentLoader;
         private readonly IWebhookQueue queue;        
+        private readonly WebhookFactory factory;        
 
-        public WebhookManager(IWebhookRouter _router, IContentLoader _contentLoader, IWebhookQueue _queue)
+        public WebhookManager(IContentLoader _contentLoader, IWebhookQueue _queue, WebhookFactory _factory)
         {
-            router = _router;
             contentLoader = _contentLoader;
             queue = _queue;
+            factory = _factory;
         } 
 
         public void Queue(ContentReference contentRef, string action = "none")
@@ -35,13 +33,11 @@ namespace DeaneBarker.Optimizely.Webhooks
 
             if (content == null) return; // I don't think this should ever be NULL, honestly...
 
-            var target = router.Route(content, action);
-            if (target == null) return; // If the router returns NULL, that means "Skip this..."
-
-            // We copy the target URL in, because it should be an immutable historical record of what the target was when the webhook was run
-            var webhook = new Webhook(content, target, action);
-            queue.Add(webhook);
-            logger.Debug($"Queued webhook {webhook.ToLogString()}");
+            foreach (var webhook in factory.Produce(content, action))
+            {
+                queue.Add(webhook);
+                logger.Debug($"Queued webhook {webhook.ToLogString()}");
+            }
         }
 
         // Public event handlers

@@ -1,4 +1,6 @@
-﻿using EPiServer.Core;
+﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
+using EPiServer.Core;
+using EPiServer.ServiceLocation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,14 +21,16 @@ namespace DeaneBarker.Optimizely.Webhooks
         public bool Successful => History.Count != 0 && History.Last().Successful;
         public int AttemptCount => History.Count();
         public ReadOnlyCollection<WebhookAttempt> History => new ReadOnlyCollection<WebhookAttempt>(history.OrderBy(w => w.Executed).ToList());
+        public IWebhookSerializer Serializer { get; private set; }
 
-        public Webhook(IContent content, Uri target, string action)
+        public Webhook(IContent content, Uri target, string action, IWebhookSerializer serializer)
         {
             Id = Guid.NewGuid();
             Created = DateTime.Now;
             Content = content;
             Target = target ?? throw new ArgumentNullException(nameof(target));
             Action = action;
+            Serializer = serializer;
         }
 
         public void AddHistory(WebhookAttempt attempt)
@@ -39,9 +43,9 @@ namespace DeaneBarker.Optimizely.Webhooks
         {
             if(Content != null)
             {
-                return $"[{Content.ContentLink} / {Id} / {Action}]";
+                return $"[{Content.ContentLink} / {Action} / {Id}]";
             }
-            return $"[{Id} / {Action}]";
+            return $"[{Action} / {Id}]";
         }
 
     }
