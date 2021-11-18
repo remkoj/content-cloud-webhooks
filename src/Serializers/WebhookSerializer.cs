@@ -2,6 +2,7 @@
 using EPiServer.ContentApi.Core.ContentResult.Internal;
 using EPiServer.ContentApi.Core.Serialization;
 using EPiServer.Core;
+using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 using System.Net;
 
@@ -9,9 +10,16 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
 {
     public class WebhookSerializer : IWebhookSerializer
     {
+        private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookSerializer));
+
         public HttpWebRequest Serialize(Webhook webhook)
         {
-            var requestBody = SerializeIContent(webhook.Content);
+            var requestBody = string.Empty;
+            if (webhook.Content != null)
+            {
+                requestBody = SerializeIContent(webhook.Content);
+                logger.Debug($"Serialized content {webhook.Content.ContentLink} into {requestBody.Length} byte(s). ID: {webhook.Id}");
+            }
 
             var request = new WebRequestBuilder()
                 .AsPost()

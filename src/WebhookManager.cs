@@ -2,16 +2,19 @@
 using DeaneBarker.Optimizely.Webhooks.Routers;
 using EPiServer;
 using EPiServer.Core;
+using EPiServer.Logging;
 using System;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
     public class WebhookManager : IWebhookManager
     {
+        private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookManager));
+
         // This is all injected
         private readonly IWebhookRouter router;
         private readonly IContentLoader contentLoader;
-        private readonly IWebhookQueue queue;
+        private readonly IWebhookQueue queue;        
 
         public WebhookManager(IWebhookRouter _router, IContentLoader _contentLoader, IWebhookQueue _queue)
         {
@@ -28,6 +31,8 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Queue(IContent content, string action = "none")
         {
+            logger.Debug($"Queue request for content {content.ContentLink} bearing action \"{action}\"");
+
             if (content == null) return; // I don't think this should ever be NULL, honestly...
 
             var target = router.Route(content, action);
@@ -36,6 +41,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             // We copy the target URL in, because it should be an immutable historical record of what the target was when the webhook was run
             var webhook = new Webhook(content, target, action);
             queue.Add(webhook);
+            logger.Debug($"Queued webhook {webhook.ToLogString()}");
         }
 
         // Public event handlers

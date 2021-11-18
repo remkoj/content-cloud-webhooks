@@ -33,5 +33,16 @@ namespace DeaneBarker.Optimizely.Webhooks
         {
             history.Add(attempt);
         }
+
+        // This is just to make logging cleaner
+        public string ToLogString()
+        {
+            if(Content != null)
+            {
+                return $"[{Content.ContentLink} / {Id} / {Action}]";
+            }
+            return $"[{Id} / {Action}]";
+        }
+
     }
 }

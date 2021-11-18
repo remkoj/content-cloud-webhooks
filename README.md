@@ -79,7 +79,7 @@ The exclusions are primary -- if a type of action string is excluded, it will ne
 
 The system only works at the interface level. If you want custom logic, it's easy to reimplement
 
-```
+```csharp
 public class MyRoutingProfile : IRoutingProfile
 {
     public Uri Route(IContent content, string action)
@@ -148,7 +148,7 @@ Compile the code into your project. This is not a complete VS project -- there i
 
 Add a single routing profile to the settings:
 
-```
+```csharp
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
 settings.Add(new WebhookRoutingProfile("http://webhook.com"));
 ```
@@ -169,7 +169,7 @@ By default, webhooks are persisted to memory. If you want to persist them to the
 
 If you re-implement any services, they must be injected _after_ `WebhooksInit` has run, or they will be over-written. To do this, put a `ModuleDependency` on your initialization code:
 
-```
+```csharp
 [InitializableModule]
 [ModuleDependency(typeof(WebhooksInit))]
 public class MyWebhooksInit : IConfigurableModule
@@ -186,3 +186,35 @@ public class MyWebhooksInit : IConfigurableModule
 ```
 
 This will wait until `WebhooksInit` has executed, then overwrite *those* services with your own implementations.
+
+## Webhook Log Configuration
+
+To create a separate log for webhooks, edit `EpiserverLog.config`
+
+Add a new appender (this is a file appender, but the general concept applies for other logging methods):
+
+```xml
+<appender name="webhooksAppender" type="log4net.Appender.RollingFileAppender" >
+  <file value="App_Data\webhooks.log" />  <!-- Adjust the path as you like -->
+  <encoding value="utf-8" />
+  <staticLogFileName value="true"/>
+  <datePattern value=".yyyyMMdd.'log'" />
+  <rollingStyle value="Date" />
+  <threshold value="debug" />
+  <appendToFile value="true" />
+  <layout type="log4net.Layout.PatternLayout">
+    <conversionPattern value="%date [%thread] %level %logger: %message%n" />
+  </layout>
+</appender>
+```
+
+Then, add a new logger:
+
+```xml
+<logger name="DeaneBarker.Optimizely.Webhooks" >
+  <level value="DEBUG" />
+  <appender-ref ref="webhooksAppender" />
+</logger>
+```
+
+This will capture all logging activity for any class in the `DeaneBarker.Optimizely.Webhooks` namespace.

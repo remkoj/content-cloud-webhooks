@@ -2,6 +2,7 @@
 using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
+using EPiServer.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -11,6 +12,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
 {
     public class InMemoryWebhookQueue : IWebhookQueue, IDisposable
     {
+        private readonly ILogger logger = LogManager.GetLogger(typeof(InMemoryWebhookQueue));
+
         private readonly BlockingCollection<Webhook> queue = new BlockingCollection<Webhook>();
         private readonly IWebhookSerializer serializer;
         private readonly IWebhookHttpProcessor httpProcessor;
@@ -34,19 +37,24 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
         // The queue is thread-safe. Go nuts, I guess.
         public void StartWatcher(int count = 1)
         {
+            logger.Debug($"Starting {count} watching thread(s)");
             for (var i = 0; i < count; i++)
             {
                 // This starts a watcher in another thread
                 Task.Run(() =>
                 {
+                    logger.Debug($"Started thread #{i}: {Thread.CurrentThread.ManagedThreadId}");
                     while (!queue.IsCompleted) // After completing a webhook, the code will come back here; since we never call CompleteAdding, this will launch back through the loop
                     {
                         // The code will block here, and only move forward when there's something to take
                         var webhook = queue.Take();
 
+                        logger.Debug($"Retrieved webhook from queue {webhook.ToLogString()}; attempt {webhook.AttemptCount+1} of {MaxAttempts}");
+
                         // This triggers the actual execution
                         var request = serializer.Serialize(webhook);
                         var result = httpProcessor.Process(request);
+                        logger.Debug($"Webhook attempt created; status: {result.StatusCode}; length: {result.Result.Length} {webhook.ToLogString()}");
                         webhook.AddHistory(result);
                         store.Store(webhook);
 
@@ -54,13 +62,18 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
                         {
                             if (webhook.AttemptCount <= MaxAttempts) // We can try again, so set a timer and put it back in the queue
                             {
+                                logger.Debug($"Setting timer for {DelayBetweenRetries}ms to re-queue webhook {webhook.ToLogString()}");
                                 var timer = new System.Timers.Timer
                                 {
                                     Interval = DelayBetweenRetries, // Wait for the delay...
                                     AutoReset = false // ...one time...
                                 };
-                                timer.Elapsed += (s, args) => { queue.Add(webhook); }; // ...then put it back in the top of the queue
+                                timer.Elapsed += (s, args) => { queue.Add(webhook); logger.Debug($"Re-queueing webhook {webhook.ToLogString()}"); }; // ...then put it back in the top of the queue
                                 timer.Start();
+                            }
+                            else
+                            {
+                                logger.Debug($"Max attempts reached; abandoning {webhook.ToLogString()}");
                             }
                         }
 

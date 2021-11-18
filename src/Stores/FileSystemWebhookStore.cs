@@ -1,5 +1,6 @@
 ﻿using EPiServer.ContentApi.Core.ContentResult.Internal;
 using EPiServer.Core;
+using EPiServer.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,16 +9,33 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
 {
     public class FileSystemWebhookStore : IWebhookStore
     {
+        private readonly ILogger logger = LogManager.GetLogger(typeof(FileSystemWebhookStore));
+
         public static string StorePath { get; set; }
 
         public void Store(Webhook webhook)
         {
-            if (StorePath == null) return;
+            logger.Debug($"Storing webhook {webhook.ToLogString()}");
 
-            Directory.CreateDirectory(StorePath);
+            if (StorePath == null)
+            {
+                logger.Error("StorePath value is not set.");
+                return;
+            }
+
+            if(!Directory.Exists(StorePath))
+            {
+                Directory.CreateDirectory(StorePath);
+                logger.Debug($"Created directory at {StorePath}");
+            }
+
+            var fullPath = Path.Combine(StorePath, GetFileName(webhook));
 
             var serializer = new JsonSerializer();
-            File.WriteAllText(Path.Combine(StorePath, GetFileName(webhook)), serializer.Serialize(new StorableWebhook(webhook)));
+            var content = serializer.Serialize(new StorableWebhook(webhook));
+
+            File.WriteAllText(fullPath, content);
+            logger.Debug($"Wrote {content.Length} character(s) to {fullPath.Quoted()} {webhook.ToLogString()}");
         }
 
         protected string GetFileName(Webhook webhook)
