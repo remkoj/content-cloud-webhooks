@@ -1,6 +1,5 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.Core;
-using EPiServer.ServiceLocation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,7 +29,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             Content = content;
             Target = target ?? throw new ArgumentNullException(nameof(target));
             Action = action;
-            Serializer = serializer;
+            Serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         }
 
         public void AddHistory(WebhookAttempt attempt)
