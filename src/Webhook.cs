@@ -20,7 +20,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public bool Successful => History.Count != 0 && History.Last().Successful;
         public int AttemptCount => History.Count();
         public ReadOnlyCollection<WebhookAttempt> History => new ReadOnlyCollection<WebhookAttempt>(history.OrderBy(w => w.Executed).ToList());
-        public IWebhookSerializer Serializer { get; private set; }
+        public IWebhookSerializer Serializer { get; private set; } 
 
         public Webhook(Uri target, string action, IWebhookSerializer serializer, IContent content = null)
         {
@@ -42,7 +42,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         {
             if(Content != null)
             {
-                return $"[{Content.ContentLink} / {Action} / {Id}]";
+                return $"[{Action} / {Content.ContentLink} / {Id}]";
             }
             return $"[{Action} / {Id}]";
         }

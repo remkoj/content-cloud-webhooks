@@ -1,6 +1,5 @@
 ﻿using EPiServer;
 using EPiServer.Core;
-using System;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {

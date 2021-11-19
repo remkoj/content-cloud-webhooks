@@ -1,5 +1,4 @@
-﻿using DeaneBarker.Optimizely.Webhooks;
-using System;
+﻿using System;
 
 namespace DeaneBarker.Optimizely.Webhooks.Queues
 {

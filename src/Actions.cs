@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
-namespace DeaneBarker.Optimizely.Webhooks
+﻿namespace DeaneBarker.Optimizely.Webhooks
 {
+    // Just provides some standard action strings
     public static class Actions
     {
         public static string Published = "published";

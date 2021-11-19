@@ -1,4 +1,5 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Queues;
+﻿using DeaneBarker.Optimizely.Webhooks.Factories;
+using DeaneBarker.Optimizely.Webhooks.Queues;
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Logging;
@@ -13,9 +14,9 @@ namespace DeaneBarker.Optimizely.Webhooks
         // This is all injected
         private readonly IContentLoader contentLoader;
         private readonly IWebhookQueue queue;        
-        private readonly WebhookFactory factory;        
+        private readonly WebhookFactoryManager factory;        
 
-        public WebhookManager(IContentLoader _contentLoader, IWebhookQueue _queue, WebhookFactory _factory)
+        public WebhookManager(IContentLoader _contentLoader, IWebhookQueue _queue, WebhookFactoryManager _factory)
         {
             contentLoader = _contentLoader;
             queue = _queue;
@@ -24,6 +25,7 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Queue(string action)
         {
+            logger.Debug($"Queue request for action \"{action}\"");
             factory.Produce(action).ToList().ForEach(queue.Add);
         }
 

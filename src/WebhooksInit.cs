@@ -1,6 +1,6 @@
-﻿using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
+﻿using DeaneBarker.Optimizely.Webhooks.Factories;
+using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
 using DeaneBarker.Optimizely.Webhooks.Queues;
-using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
 using EPiServer.Core;
 using EPiServer.Framework;
@@ -20,10 +20,6 @@ namespace DeaneBarker.Optimizely.Webhooks
             // This is where the event handlers are located
             context.Services.AddSingleton<IWebhookManager, WebhookManager>();
 
-            // This turns the webhook into an HttpWebRequest
-            // This is where you would manipulate the URL or add custom headers or whatever
-            context.Services.AddSingleton<IWebhookSerializer, WebhookSerializer>();
-
             // This makes the actual HTTP call
             // I broke this out to its own service so it could be mocked -- I needed a way to test if the call failed
             context.Services.AddSingleton<IWebhookHttpProcessor, WebhookHttpProcessor>();
@@ -39,7 +35,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             context.Services.AddSingleton<WebhookSettings, WebhookSettings>();
 
             // Executes all the IWebhookFactoryProfiles to produce webhooks
-            context.Services.AddSingleton<WebhookFactory, WebhookFactory>();
+            context.Services.AddSingleton<WebhookFactoryManager, WebhookFactoryManager>();
         }
 
         public void Initialize(InitializationEngine context)

@@ -1,5 +1,4 @@
-﻿using DeaneBarker.Optimizely.Webhooks;
-using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
+﻿using DeaneBarker.Optimizely.Webhooks.HttpProcessors;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using DeaneBarker.Optimizely.Webhooks.Stores;
 using EPiServer.Logging;
@@ -15,19 +14,19 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
         private readonly ILogger logger = LogManager.GetLogger(typeof(InMemoryWebhookQueue));
 
         private readonly BlockingCollection<Webhook> queue = new BlockingCollection<Webhook>();
-        private readonly IWebhookSerializer serializer;
         private readonly IWebhookHttpProcessor httpProcessor;
         private readonly IWebhookStore store;
+        private readonly WebhookSettings settings;
 
         public static int MaxAttempts { get; set; } = 5;
         public static int DelayBetweenRetries { get; set; } = 10000;  // In milliseconds
         public static int Throttle { get; set; } = 1000; // Milliseconds between requests per thread
 
-        public InMemoryWebhookQueue(IWebhookSerializer _serializer, IWebhookHttpProcessor _httpProcessor, IWebhookStore _store)
+        public InMemoryWebhookQueue(IWebhookHttpProcessor _httpProcessor, IWebhookStore _store, WebhookSettings _settings)
         {
             httpProcessor = _httpProcessor;
-            serializer = _serializer;
             store = _store;
+            settings = _settings;
 
             StartWatcher(1);
         }
@@ -52,7 +51,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
                         logger.Debug($"Retrieved webhook from queue {webhook.ToLogString()}; attempt {webhook.AttemptCount+1} of {MaxAttempts}");
 
                         // This triggers the actual execution
-                        var request = webhook.Serializer.Serialize(webhook);
+                        var request = (webhook.Serializer ?? settings.DefaultSerializer).Serialize(webhook);
                         var result = httpProcessor.Process(request);
                         logger.Debug($"Webhook attempt created; status: {result.StatusCode}; length: {result.Result.Length} {webhook.ToLogString()}");
                         webhook.AddHistory(result);

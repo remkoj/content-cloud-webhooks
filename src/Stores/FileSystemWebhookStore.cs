@@ -51,7 +51,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
             public Guid id => webhook.Id;
             public DateTime created => webhook.Created;
             public string target => webhook.Target.AbsoluteUri;
-            public ContentReference contentLink => webhook.ContentLink;
+            public ContentReference contentLink => webhook.ContentLink ?? ContentReference.EmptyReference;
             public string action => webhook.Action;
             
             public ReadOnlyCollection<WebhookAttempt> history => webhook.History;
