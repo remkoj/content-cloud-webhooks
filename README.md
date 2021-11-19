@@ -66,13 +66,13 @@ Once a `Webhook` has succeeded (the last `WebhookAttempt` in its `History` was s
 
 ### WebhookFactoryManager
 
-Iterates the registered `IWebhookFactory` objects and calls `Process` on each, aggregating the returned webhooks.
+Iterates the registered `IWebhookFactory` objects and calls `Generate` on each, aggregating the returned webhooks.
 
 ### IWebhookFactory
 
 (There is no default for this. You need to register your selected factories in your startup code.)
 
-The interface contains one method: `Process` which returns a `List<Webhook>` or `null`.
+The interface contains one method: `Generate` which returns a `List<Webhook>` or `null`.
 
 The default implementation requires you to pass in a target `Uri` and allows you to set the following:
 

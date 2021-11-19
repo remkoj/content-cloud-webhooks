@@ -27,7 +27,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
             Target = target;
         }
 
-        public IEnumerable<Webhook> Process(string action, IContent content)
+        public IEnumerable<Webhook> Generate(string action, IContent content)
         {
             if (ExcludeActions.Contains(action))
             {

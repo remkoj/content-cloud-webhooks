@@ -5,6 +5,6 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
 {
     public interface IWebhookFactory
     {
-        IEnumerable<Webhook> Process(string action, IContent content);
+        IEnumerable<Webhook> Generate(string action, IContent content);
     }
 }

@@ -26,7 +26,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public void Queue(string action)
         {
             logger.Debug($"Queue request for action \"{action}\"");
-            factory.Produce(action).ToList().ForEach(queue.Add);
+            factory.Generate(action).ToList().ForEach(queue.Add);
         }
 
         public void Queue(string action, ContentReference contentRef)
@@ -37,7 +37,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public void Queue(string action, IContent content)
         {
             logger.Debug($"Queue request for content {content.ContentLink} bearing action \"{action}\"");
-            factory.Produce(action, content).ToList().ForEach(queue.Add);
+            factory.Generate(action, content).ToList().ForEach(queue.Add);
         }
 
         // Public event handlers
