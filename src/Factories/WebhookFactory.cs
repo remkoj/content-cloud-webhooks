@@ -12,7 +12,7 @@ namespace DeaneBarker.Optimizely.Webhooks
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookFactory));
 
-        public IEnumerable<Webhook> Produce(string action, IContent content)
+        public IEnumerable<Webhook> Produce(string action, IContent content = null)
         {
             var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             var webhooks = new List<Webhook>();

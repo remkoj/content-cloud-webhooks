@@ -2,6 +2,7 @@
 using EPiServer;
 using EPiServer.Core;
 using EPiServer.Logging;
+using System.Linq;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -23,28 +24,18 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Queue(string action)
         {
-            foreach (var webhook in factory.Produce(action, null))
-            {
-                queue.Add(webhook);
-                logger.Debug($"Queued webhook {webhook.ToLogString()}");
-            }
+            factory.Produce(action).ToList().ForEach(queue.Add);
         }
 
         public void Queue(string action, ContentReference contentRef)
         {
-            var content = contentLoader.Get<IContent>(contentRef); // Get the content...
-            Queue(action, content);
+            Queue(action, contentLoader.Get<IContent>(contentRef));
         }
 
         public void Queue(string action, IContent content)
         {
             logger.Debug($"Queue request for content {content.ContentLink} bearing action \"{action}\"");
-
-            foreach (var webhook in factory.Produce(action, content))
-            {
-                queue.Add(webhook);
-                logger.Debug($"Queued webhook {webhook.ToLogString()}");
-            }
+            factory.Produce(action, content).ToList().ForEach(queue.Add);
         }
 
         // Public event handlers

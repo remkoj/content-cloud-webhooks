@@ -18,7 +18,7 @@ namespace Ayogo3.Webhooks.Factories
             {
                 return null;
             }
-            return new[] { new Webhook(null, new Uri("https://cnn.com"), action, new UrlPingSerializer()) };
+            return new[] { new Webhook(new Uri("https://cnn.com"), action, new UrlPingSerializer()) };
         }
     }
 

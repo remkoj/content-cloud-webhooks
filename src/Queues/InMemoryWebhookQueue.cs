@@ -90,6 +90,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
         public void Add(Webhook webhook)
         {
             queue.Add(webhook);
+            logger.Debug($"Queued webhook {webhook.ToLogString()}");
             store.Store(webhook);
         }
 

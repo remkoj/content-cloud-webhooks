@@ -22,7 +22,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public ReadOnlyCollection<WebhookAttempt> History => new ReadOnlyCollection<WebhookAttempt>(history.OrderBy(w => w.Executed).ToList());
         public IWebhookSerializer Serializer { get; private set; }
 
-        public Webhook(IContent content, Uri target, string action, IWebhookSerializer serializer)
+        public Webhook(Uri target, string action, IWebhookSerializer serializer, IContent content = null)
         {
             Id = Guid.NewGuid();
             Created = DateTime.Now;
