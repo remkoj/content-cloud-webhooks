@@ -61,10 +61,6 @@ A `Webhook` will generate a HTTP request when it is executed, and the results of
 
 Once a `Webhook` has succeeded (the last `WebhookAttempt` in its `History` was successful), it will never execute again. Future content operations on the same content object will create a new `Webhook` object.
 
-### IWebhookRouter
-
-This calls all registered `IWebhookRoutingProfiles` serially. It returns the first one that returns something other than `null`, or `null` if none of them do.
-
 ### IWebhookFactoryProfile
 
 The interface contains one method: `Process` which returns a `List<Webhook>` or `null`.
