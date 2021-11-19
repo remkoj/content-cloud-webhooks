@@ -8,7 +8,7 @@ Some features (of the default implementation):
 * Generates a webhook for four content actions: (1) published, (2) moved, (3) trashed (moved to the wastebasket), and (4) deleted
 * Generic webhooks without content attached can be generated manually
 * Operates in a separate thread. It will not block the UI, and any failures will not affect the Content Cloud installation.
-* Placing a webhook in queue (the only thing done in-process) takes single-digit milliseconds (depending on the factories registered and executed)
+* Placing a webhook in queue (the only thing done in the main thread) takes single-digit milliseconds (depending on the factories registered and executed)
 * Will queue infinite webhooks in a thread-safe worker environment. A separate thread works webhooks in the queue, and multiple threads can be started to work the queue.
 * Allows for a specific number of retries after a specified retry delay ("if this webhook call fails, retry five more times, once every 15 seconds")
 * Allows for throttling per thread ("each thread should only make one webhook call per second")
