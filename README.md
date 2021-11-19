@@ -61,7 +61,7 @@ A `Webhook` will generate a HTTP request when it is executed, and the results of
 
 Once a `Webhook` has succeeded (the last `WebhookAttempt` in its `History` was successful), it will never execute again. Future content operations on the same content object will create a new `Webhook` object.
 
-### IWebhookFactoryProfile
+### IWebhookFactory
 
 The interface contains one method: `Process` which returns a `List<Webhook>` or `null`.
 
@@ -124,33 +124,32 @@ This is the basic flow. A lot of this is dependent on the default implementation
 1. Your app starts up, and `WebhooksInit`:
    * Injects all the services as singletons
    * Binds the event handlers
-1. A content operation occurs in Content Cloud and an event is raised
-3. The event handler on `IWebhookManager`:
-   * Iterates all the `FactoryProfiles`, calling `Process` on each
-   * Adds each webhook to the `IWebhookQueue`
+1. When a content operation occurs in Content Cloud and an event is raised, the bound event handler on `IWebhookManager`:
+   * Iterates all the `WebhookSettings.Factories`, calling `Process` on each
+   * Adds each produced webhook to the `IWebhookQueue`
 4. When added to `IWebhookQueue`, that object:
    * Passes it to `IWebhookStore` to persist it
    * `Webhook` object is found in the queue by the worker thread
    * The worker thread calls the `IWebhookSerializer` on the webhook and gets an `HttpWebRequest` back
    * The worker thread passes the `HttpWebRequest` to `IWebhookHttpProcessor` and gets back a `WebhookAttempt`
-   * The worker thread attaches the `WebhookAttempt` to the history of `Webhook`
+   * The worker thread attaches the `WebhookAttempt` to the history of the webhook
    * The worker thread passes the `Webhook` to `IWebhookStore` to persist it
-      * If the webhook execution succeeded, we're all done 
-      * If the webhook execution failed, the worker thread might set a timer for the default retry delay, then place the `Webhook` back in the queue (this depends on the settings)
-   * The worker thread waits the specified throttle time delay, then waits for a new object in the queue
+   * If the webhook execution succeeded, we're all done 
+   * If the webhook execution failed, the worker thread might set a timer for the default retry delay, then place the `Webhook` back in the queue (this depends on the settings)
+   * The worker thread waits the specified throttle time delay, then blocks while waiting for a new object in the queue
 
 ## To Install and Configure
 
-Compile the code into your project. This is not a complete VS project -- there is no product or solution file. The code is simply the class files, with no external dependencies or required Nuget packages.
+Compile the code into your project. This is not a complete VS project -- there is no project or solution file. The code is simply the class files, with no external dependencies or required Nuget packages.
 
-Add a single instance of the default factory profile to the settings:
+in your startup code, add a single instance of a factory to the `WebhookSettings.Factories`:
 
 ```csharp
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-settings.Add(new SimpleWebhookFactoryProfile("http://webhook.com"));
+settings.Factories.Add(new PostContentWebhookFactory("http://webhook.com"));
 ```
 
-That is enough to have the system start generating and processing webhooks.
+That is enough to have the system start generating and processing webhooks. The `PostContentWebhookFactory` will serialize the content from any tracked event into JSON and POST it to the provided URL.
 
 On `InMemoryWebhookQueue`, you can set the following static properties:
 
