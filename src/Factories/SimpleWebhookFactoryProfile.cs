@@ -9,9 +9,9 @@ using System.Web;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
-    public class WebhookFactoryProfile : IWebhookFactoryProfile
+    public class SimpleWebhookFactoryProfile : IWebhookFactoryProfile
     {
-        private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookFactoryProfile));
+        private readonly ILogger logger = LogManager.GetLogger(typeof(SimpleWebhookFactoryProfile));
 
         public Uri Target { get; set; }
         public ICollection<Type> IncludeTypes { get; set; } = new List<Type>();
@@ -19,6 +19,16 @@ namespace DeaneBarker.Optimizely.Webhooks
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; }
+
+        public SimpleWebhookFactoryProfile(string target)
+        {
+            Target = new Uri(target);
+        }
+
+        public SimpleWebhookFactoryProfile(Uri target)
+        {
+            Target = target;
+        }
 
         public IEnumerable<Webhook> Process(string action, IContent content = null)
         {
@@ -65,7 +75,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             return new List<Webhook>()
             {
-                new Webhook(content, Target, action, Serializer ?? settings.DefaultSerializer)
+                new Webhook(Target, action, Serializer ?? settings.DefaultSerializer, content)
             };
         }
     }

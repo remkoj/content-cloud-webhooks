@@ -1,4 +1,5 @@
 ﻿using EPiServer.Core;
+using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 using System;
 using System.Collections.Generic;
@@ -9,14 +10,18 @@ namespace DeaneBarker.Optimizely.Webhooks
 {
     public class WebhookFactory
     {
-        public IEnumerable<Webhook> Produce(IContent content, string action)
+        private readonly ILogger logger = LogManager.GetLogger(typeof(WebhookFactory));
+
+        public IEnumerable<Webhook> Produce(string action, IContent content)
         {
             var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             var webhooks = new List<Webhook>();
 
             foreach (var factoryProfile in webhookSettings.FactoryProfiles)
             {
-                webhooks.AddRange(factoryProfile.Process(content, action) ?? new List<Webhook>());
+                var result = factoryProfile.Process(action, content) ?? new List<Webhook>();
+                logger.Debug($"Factory {factoryProfile.GetType().Name} produced {result.Count()} webhook(s)");
+                webhooks.AddRange(result);
             }
 
             return webhooks;

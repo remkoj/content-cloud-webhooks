@@ -14,7 +14,7 @@ namespace DeaneBarker.Optimizely.Webhooks
         public Guid Id { get; private set; }
         public DateTime Created { get; private set; }
         public IContent Content { get; private set; }
-        public ContentReference ContentLink => Content.ContentLink;
+        public ContentReference ContentLink => Content?.ContentLink ?? ContentReference.EmptyReference;
         public Uri Target { get; private set; }
         public string Action { get; private set; }
         public bool Successful => History.Count != 0 && History.Last().Successful;

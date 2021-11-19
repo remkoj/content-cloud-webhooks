@@ -6,6 +6,7 @@ Some features (of the default implementation):
 
 * Posts a JSON-serialized version of the content involved in the operation
 * Generates a webhook for four content actions: (1) published, (2) moved, (3) trashed (moved to the wastebasket), and (4) deleted
+* Generic webhooks without content attached can be generated manually
 * Operates in a separate thread. It will not block the UI, and any failures will not affect the Content Cloud installation.
 * Will queue infinite webhooks in a thread-safe worker environment. A separate thread works webhooks in the queue, and multiple threads can be started to work the queue.
 * Allows for a specific number of retries after a specified retry delay ("if this webhook call fails, retry five more times, once every 15 seconds")
@@ -64,9 +65,9 @@ Once a `Webhook` has succeeded (the last `WebhookAttempt` in its `History` was s
 
 This calls all registered `IWebhookRoutingProfiles` serially. It returns the first one that returns something other than `null`, or `null` if none of them do.
 
-### IWebhookRoutingProfile
+### IWebhookFactoryProfile
 
-The interface contains one method: `Route` which returns a `Uri`.
+The interface contains one method: `Process` which returns a `List<Webhook>` or `null`.
 
 The default implementation requires you to pass in a target `Uri` and allows you to set the following:
 
@@ -75,25 +76,26 @@ The default implementation requires you to pass in a target `Uri` and allows you
 * *IncludeActions:* A list of action strings that _should_ generate a webhook.
 * *ExcludeActions:* A list of action strings that _should not_ generate a webhook.
 
-The exclusions are primary -- if a type of action string is excluded, it will negate the webhook even if that type or action is included later. Inclusions are optional -- if they are not set, it's assumed that *everything* should generate a webhook.
+*The exclusions are primary* -- if a type of action string is excluded, it will negate the webhook even if that type or action is included later. Inclusions are optional -- if they are not set, it's assumed that *everything* should generate a webhook.
 
 The system only works at the interface level. If you want custom logic, it's easy to reimplement
 
 ```csharp
-public class MyRoutingProfile : IRoutingProfile
+public class MyWebhookFactoryProfile : IWebhookFactoryProfile
 {
-    public Uri Route(IContent content, string action)
+    public IEnumerable<Webhook>(string action, IContent content)
     {
         // Allow webhooks in the bottom half of each minute
-        return DateTime.Now.Seconds > 30 ? new Uri("http://webhook.com/") : null;
+        if(DateTime.Now.Seconds <= 30) return null
+        return new Webhook("http://webhooks.com", "something happened", new WebhookSerializer(), content);
     }
 }
 
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-settings.RoutingProfiles.Add(new MyRoutingProfile());
+settings.FactoryProfiles.Add(new MyWebhookFactoryProfile());
 ```
 
-If you want to cancel a webhook altogether, return `null`. The webhook won't be placed in queue and will eventually be garbage collected.
+You can add as many factories as you like. They will be evaluated serially, and all webhooks returned in aggregate will be placed in queue.
 
 ### IWebhookSerializer
 
@@ -128,13 +130,12 @@ This is the basic flow. A lot of this is dependent on the default implementation
    * Binds the event handlers
 1. A content operation occurs in Content Cloud and an event is raised
 3. The event handler on `IWebhookManager`:
-   * Creates a `Webhook` object
-   * Populates a URL target from `IWebhookRouter`
-   * Adds the webhook to the `IWebhookQueue` (assuming a URL was returned from `IWebhookRouter`; if `null` was returned, the webhook is abandoned)
-4. When addd to `IWebhookQueue`, that object:
+   * Iterates all the `FactoryProfiles`, calling `Process` on each
+   * Adds each webhook to the `IWebhookQueue`
+4. When added to `IWebhookQueue`, that object:
    * Passes it to `IWebhookStore` to persist it
    * `Webhook` object is found in the queue by the worker thread
-   * The worker thread passes the webhook to `IWebhookSerializer` and gets an `HttpWebRequest` back
+   * The worker thread calls the `IWebhookSerializer` on the webhook and gets an `HttpWebRequest` back
    * The worker thread passes the `HttpWebRequest` to `IWebhookHttpProcessor` and gets back a `WebhookAttempt`
    * The worker thread attaches the `WebhookAttempt` to the history of `Webhook`
    * The worker thread passes the `Webhook` to `IWebhookStore` to persist it
@@ -146,11 +147,11 @@ This is the basic flow. A lot of this is dependent on the default implementation
 
 Compile the code into your project. This is not a complete VS project -- there is no product or solution file. The code is simply the class files, with no external dependencies or required Nuget packages.
 
-Add a single routing profile to the settings:
+Add a single instance of the default factory profile to the settings:
 
 ```csharp
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-settings.Add(new WebhookRoutingProfile("http://webhook.com"));
+settings.Add(new SimpleWebhookFactoryProfile("http://webhook.com"));
 ```
 
 That is enough to have the system start generating and processing webhooks.

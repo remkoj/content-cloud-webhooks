@@ -76,6 +76,10 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
                                 logger.Debug($"Max attempts reached; abandoning {webhook.ToLogString()}");
                             }
                         }
+                        else
+                        {
+                            logger.Debug($"Webhook attempt successful {webhook.ToLogString()}");
+                        }
 
                         Thread.Sleep(Throttle); // Wait the right number of seconds before moving on
                     }

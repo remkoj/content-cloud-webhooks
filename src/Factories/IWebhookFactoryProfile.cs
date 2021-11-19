@@ -6,6 +6,6 @@ namespace DeaneBarker.Optimizely.Webhooks
 {
     public interface IWebhookFactoryProfile
     {
-        IEnumerable<Webhook> Process(IContent content, string action);
+        IEnumerable<Webhook> Process(string action, IContent content);
     }
 }
