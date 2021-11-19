@@ -7,7 +7,7 @@ namespace DeaneBarker.Optimizely.Webhooks
 {
     public class WebhookSettings
     {
-        public List<IWebhookFactory> FactoryProfiles { get; set; } = new List<IWebhookFactory>();
+        public List<IWebhookFactory> Factories { get; set; } = new List<IWebhookFactory>();
         public IWebhookSerializer DefaultSerializer { get; set; } // Do I really need this? Or should every single factory procide a serializer?
     }
 }

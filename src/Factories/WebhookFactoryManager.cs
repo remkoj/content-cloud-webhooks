@@ -15,7 +15,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
             var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             var webhooks = new List<Webhook>();
 
-            foreach (var factoryProfile in webhookSettings.FactoryProfiles)
+            foreach (var factoryProfile in webhookSettings.Factories)
             {
                 var result = factoryProfile.Process(action, content) ?? new List<Webhook>();
                 logger.Debug($"Factory {factoryProfile.GetType().Name} produced {result.Count()} webhook(s)");
