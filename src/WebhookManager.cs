@@ -51,18 +51,18 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void QueuePublishedWebhook(object sender, ContentEventArgs e)
         {
-            Queue("Published", e.ContentLink);
+            Queue(Actions.Published, e.ContentLink);
         }
 
         public void QueueMovedWebhook(object sender, ContentEventArgs e)
         {
             var movingTo = ((MoveContentEventArgs)e).TargetLink;
-            Queue(movingTo == ContentReference.WasteBasket ? "Trashed" : "Moved", e.ContentLink);
+            Queue(movingTo == ContentReference.WasteBasket ? Actions.Trashed : Actions.Moved, e.ContentLink);
         }
 
         public void QueueDeletedWebhook(object sender, DeleteContentEventArgs e)
         {
-            Queue("Deleted", e.ContentLink);
+            Queue(Actions.Deleted, e.ContentLink);
         }
     }
 }
