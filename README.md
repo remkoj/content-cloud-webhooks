@@ -13,7 +13,7 @@ Some features (of the default implementation):
 * Allows for a specific number of retries after a specified retry delay ("if this webhook call fails, retry five more times, once every 15 seconds")
 * Allows for throttling per thread ("each thread should only make one webhook call per second")
 * Saves a history of each webhook execution, including multiple attempts in the event of failure
-* Low ceremony installation -- it's just raw source code, with only one external dependency outside of what's already in a default Content Cloud project (the Content Delivery API)
+* Low ceremony installation -- it's just raw source code, with only one external dependency outside of what's already in a default Content Cloud project (the Content Delivery API; and if you don't want that, just choose a different way to serialize in `PostContentWebhookSerializer` and you'll be fine)
 
 It is designed to be extended:
 
