@@ -1,6 +1,7 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.ServiceLocation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,9 +14,10 @@ namespace DeaneBarker.Optimizely.Webhooks
         public List<IWebhookFactory> Factories => factories.Values.ToList();
         public IWebhookSerializer DefaultSerializer { get; set; } // Do I really need this? Or should every single factory procide a serializer?
 
-        public void RegisterWebhookFactory(string name, IWebhookFactory factory)
+        // You only need to provide a name if you might want to replace it later
+        public void RegisterWebhookFactory(IWebhookFactory factory, string name)
         {
-            factories[name] = factory;
+            factories[name ?? Guid.NewGuid().ToString()] = factory;
         }       
     }
 }
