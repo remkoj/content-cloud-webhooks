@@ -18,7 +18,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
             foreach (var factoryProfile in webhookSettings.Factories)
             {
                 var result = factoryProfile.Generate(action, content) ?? new List<Webhook>();
-                logger.Debug($"Factory {factoryProfile.GetType().Name} produced {result.Count()} webhook(s)");
+                logger.Debug($"Factory {factoryProfile.Name.Quoted()} produced {result.Count()} webhook(s)");
                 webhooks.AddRange(result);
             }
 

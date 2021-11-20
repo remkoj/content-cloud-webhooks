@@ -30,6 +30,8 @@ It is designed to be extended:
 
 In the case of interfaces *which are injected*, the default is in parentheses. This injection occurs (and can be changed) in `WebhooksInit`.
 
+These are listed roughly in the order of invocation.
+
 ### IWebhookManager (WebhookManager)
 
 This exposes the event handlers that Content Cloud calls when events are raised, and calls the factories to generate the webhooks it will place in queue.
@@ -98,7 +100,7 @@ public class MyWebhookFactoryProfile : IWebhookFactoryProfile
 }
 
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-settings.Factories.Add(new MyWebhookFactoryProfile());
+settings.RegisterWebhookFactory(new MyWebhookFactoryProfile());
 ```
 
 You can add as many factories as you like. They will be evaluated serially, and all webhooks returned in aggregate will be placed in queue.
@@ -115,7 +117,7 @@ A helper class is provided to make it easier to create requests.
 
 ### IWebhookHttpProcessor (WebhookHttpProcessor)
 
-This simply executes the `HttpWebRequest` created by `IwebhookSerializer`.
+This simply executes the `HttpWebRequest` created by `IWebhookSerializer`.
 
 It's injected mainly so you can mock the HTTP request for testing.
 
@@ -138,7 +140,7 @@ Here is the basic flow. A lot of this is dependent on the default implementation
    * Binds the event handlers
    * Starts a worker thread on `InMemoryWebhookQueue`
 1. When a content operation occurs in Content Cloud and an event is raised, the bound event handler on `IWebhookManager`:
-   * Iterates all the `WebhookSettings.Factories`, calling `Process` on each
+   * Iterates all the `WebhookSettings.Factories`, calling `Generate` on each
    * Adds each produced webhook to the `IWebhookQueue`
 4. When added to `IWebhookQueue`, that object:
    * Passes it to `IWebhookStore` to persist it
@@ -159,7 +161,7 @@ in your startup code, add a single instance of a factory to the `WebhookSettings
 
 ```csharp
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-settings.Factories.Add(new PostContentWebhookFactory("http://webhook.com"));
+settings.RegisterWebhookFactory(new PostContentWebhookFactory("http://webhook.com"));
 ```
 
 That is enough to have the system start generating and processing webhooks. The `PostContentWebhookFactory` will serialize the content from any tracked event into JSON and POST it to the provided URL.

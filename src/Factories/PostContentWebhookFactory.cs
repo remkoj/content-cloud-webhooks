@@ -18,6 +18,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; } = new PostContentWebhookSerializer();
 
+        public string Name => GetType().Name;
+
         public PostContentWebhookFactory(string target)
         {
             Target = new Uri(target);
@@ -38,25 +40,25 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
 
             var type = content.GetType().BaseType;
 
-            if (ExcludeTypes.Contains(type))
+            if (ExcludeTypes != null && ExcludeTypes.Contains(type))
             {
                 logger.Debug($"Webhook not produced. {type} is an excluded type");
                 return null;
             }
 
-            if (ExcludeActions.Contains(action))
+            if (ExcludeActions != null && ExcludeActions.Contains(action))
             {
                 logger.Debug($"Webhook not produced. {action} is an excluded action");
                 return null;
             }
 
-            if (IncludeTypes.Any() && !IncludeTypes.Contains(type))
+            if (IncludeTypes != null && IncludeTypes.Any() && !IncludeTypes.Contains(type))
             {
                 logger.Debug($"Webhook not produced. {type} is not an included type");
                 return null;
             }
 
-            if (IncludeActions.Any() && !IncludeActions.Contains(action))
+            if (IncludeActions != null && IncludeActions.Any() && !IncludeActions.Contains(action))
             {
                 logger.Debug($"Webhook not produced. {action} is not an included action");
                 return null;
