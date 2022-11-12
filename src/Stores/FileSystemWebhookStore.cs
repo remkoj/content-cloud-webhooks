@@ -1,9 +1,11 @@
-﻿using EPiServer.ContentApi.Core.ContentResult.Internal;
+﻿
 using EPiServer.Core;
 using EPiServer.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks.Stores
 {
@@ -31,8 +33,10 @@ namespace DeaneBarker.Optimizely.Webhooks.Stores
 
             var fullPath = Path.Combine(StorePath, GetFileName(webhook));
 
-            var serializer = new JsonSerializer();
-            var content = serializer.Serialize(new StorableWebhook(webhook));
+            var serializer = new Newtonsoft.Json.JsonSerializer();
+            var sw = new StringWriter();
+            serializer.Serialize(sw, new StorableWebhook(webhook));
+            var content = sw.ToString();
 
             File.WriteAllText(fullPath, content);
             logger.Debug($"Wrote {content.Length} character(s) to {fullPath.Quoted()} {webhook.ToLogString()}");

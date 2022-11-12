@@ -4,6 +4,7 @@ using EPiServer;
 using EPiServer.Core;
 using EPiServer.Logging;
 using System.Linq;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {

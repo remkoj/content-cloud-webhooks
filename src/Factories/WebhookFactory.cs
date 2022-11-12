@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -17,9 +18,9 @@ namespace DeaneBarker.Optimizely.Webhooks
             var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             var webhooks = new List<Webhook>();
 
-            foreach (var factoryProfile in webhookSettings.FactoryProfiles)
+            foreach (var factoryProfile in webhookSettings.Factories)
             {
-                var result = factoryProfile.Process(action, content) ?? new List<Webhook>();
+                var result = factoryProfile.Generate(action, content) ?? new List<Webhook>();
                 logger.Debug($"Factory {factoryProfile.GetType().Name} produced {result.Count()} webhook(s)");
                 webhooks.AddRange(result);
             }

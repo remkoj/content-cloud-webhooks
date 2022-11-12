@@ -3,6 +3,7 @@ using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 using System.Collections.Generic;
 using System.Linq;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks.Factories
 {

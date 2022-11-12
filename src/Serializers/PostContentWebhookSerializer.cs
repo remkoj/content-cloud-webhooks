@@ -1,10 +1,14 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Helpers;
-using EPiServer.ContentApi.Core.ContentResult.Internal;
+using EPiServer.ContentApi.Core.Configuration;
 using EPiServer.ContentApi.Core.Serialization;
+using EPiServer.ContentApi.Core.Serialization.Internal;
 using EPiServer.Core;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
+using EPiServer.Web;
 using System.Net;
+using System.Text.Json;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks.Serializers
 {
@@ -30,9 +34,23 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
         // I broke this out to its own method so that if someone inherits this class and overrides Serialize, they don't have to figure out this code
         protected string SerializeIContent(IContent content)
         {
-            var serializer = new JsonSerializer();
-            var mapper = ServiceLocator.Current.GetInstance<IContentModelMapper>();
-            return serializer.Serialize(mapper.TransformContent(content));
+            var contentConvertingService = ServiceLocator.Current.GetInstance<ContentConvertingService>();
+
+            var converterContext = new ConverterContext(
+                   contentReference: ((IContent)content).ContentLink,
+                   language: System.Globalization.CultureInfo.CurrentCulture,
+                   contentApiOptions: new ContentApiOptions("", false, false, ""),
+                   contextMode: ContextMode.Default,
+            select: "",
+            expand: "",
+            excludePersonalizedContent: false
+                   );
+            var obj = contentConvertingService.ConvertToContentApiModel((IContent)content, converterContext);
+
+            var serializer = new Newtonsoft.Json.JsonSerializer();
+            var sw = new StringWriter();
+            serializer.Serialize(sw, obj);
+            return sw.ToString();
         }
     }
 }

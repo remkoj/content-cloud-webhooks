@@ -5,6 +5,7 @@ using EPiServer.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks.Factories
 {

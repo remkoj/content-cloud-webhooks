@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -65,7 +66,7 @@ namespace DeaneBarker.Optimizely.Webhooks
             var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
             return new List<Webhook>()
             {
-                new Webhook(content, Target, action, Serializer ?? settings.DefaultSerializer)
+                new Webhook(Target, action, Serializer ?? settings.DefaultSerializer, content)
             };
         }
     }
