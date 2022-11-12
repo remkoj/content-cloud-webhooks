@@ -157,12 +157,14 @@ Here is the basic flow. A lot of this is dependent on the default implementation
 
 Compile the code into your project. This is not a complete VS project -- there is no project or solution file. The code is simply the class files, with no external dependencies or required Nuget packages.
 
-in your startup code, add a single instance of a factory to the `WebhookSettings.Factories`:
+In `Configure` in `Startup.cs`, add a single instance of a factory to the `WebhookSettings.Factories`:
 
 ```csharp
 var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
 settings.RegisterWebhookFactory(new PostContentWebhookFactory("http://webhook.com"));
 ```
+
+(Hint: if you're testing, go to [https://webhook.site/](https://webhook.site/) and get a unique URL to send webhooks to)
 
 That is enough to have the system start generating and processing webhooks. The `PostContentWebhookFactory` will serialize the content from any tracked event into JSON and POST it to the provided URL.
 
