@@ -164,7 +164,7 @@ var settings = ServiceLocator.Current.GetInstance<WebhookSettings>();
 settings.RegisterWebhookFactory(new PostContentWebhookFactory("http://webhook.com"));
 ```
 
-(Hint: if you're testing, go to [https://webhook.site/] and get a unique URL to send webhooks to)
+(Hint: if you're testing, go to [https://webhook.site/](https://webhook.site/) and get a unique URL to send webhooks to)
 
 That is enough to have the system start generating and processing webhooks. The `PostContentWebhookFactory` will serialize the content from any tracked event into JSON and POST it to the provided URL.
 
