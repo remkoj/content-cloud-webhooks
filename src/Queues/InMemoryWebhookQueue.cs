@@ -96,7 +96,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Queues
 
         public void Dispose()
         {
-            queue.CompleteAdding();
+            //queue.CompleteAdding();
         }
     }
 }
