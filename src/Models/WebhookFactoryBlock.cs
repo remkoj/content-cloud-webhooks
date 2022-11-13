@@ -99,7 +99,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             var types = contentTypeRepository.List();
             
             var options = new List<ISelectItem>();
-            options.AddRange(types.ToList().Select(t => new SelectItem() { Text = t.DisplayName ?? t.Name, Value = t.ModelTypeString }));
+            options.AddRange(types.ToList().OrderBy(t => t.Name).Select(t => new SelectItem() { Text = t.DisplayName ?? t.Name, Value = t.ModelTypeString }));
 
             return options;    
         }
