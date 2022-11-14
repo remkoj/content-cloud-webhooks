@@ -2,6 +2,7 @@
 using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.ServiceLocation;
+using EPiServer.Shell;
 using EPiServer.Shell.Configuration;
 using EPiServer.Shell.ObjectEditing;
 using EPiServer.Shell.ObjectEditing.EditorDescriptors;
@@ -181,10 +182,15 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         }
     }
 
-    public enum NumberOfColumns
+
+    [UIDescriptorRegistration]
+    public class WebhookFactoryBlockUIDescriptor : UIDescriptor<WebhookFactoryBlock>
     {
-        One,
-        Two,
-        Three,
+        public WebhookFactoryBlockUIDescriptor() : base()
+        {
+            DefaultView = CmsViewNames.AllPropertiesView;
+            EnableStickyView = false;
+            DisabledViews = new[] { CmsViewNames.PreviewView, CmsViewNames.OnPageEditView };
+        }
     }
 }
