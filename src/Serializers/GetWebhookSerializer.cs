@@ -5,7 +5,7 @@ using System.Net;
 
 namespace DeaneBarker.Optimizely.Serializers
 {
-    public class SimplePingWebhookSerializer : IWebhookSerializer
+    public class GetWebhookSerializer : IWebhookSerializer
     {
         public HttpWebRequest Serialize(Webhook webhook)
         {
@@ -13,6 +13,7 @@ namespace DeaneBarker.Optimizely.Serializers
                 .AsGet()
                 .ToUrl(webhook.Target)
                 .WithQuerystringArg("action", webhook.Action)
+                .WithQuerystringArg("id", webhook.ContentLink?.ID.ToString() ?? "0")
                 .Build();
         }
     }

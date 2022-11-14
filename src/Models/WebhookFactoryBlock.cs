@@ -1,8 +1,12 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Factories;
+﻿using Castle.MicroKernel.SubSystems.Conversion;
+using DeaneBarker.Optimizely.Webhooks.Factories;
+using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.ServiceLocation;
+using EPiServer.Shell.Configuration;
 using EPiServer.Shell.ObjectEditing;
 using EPiServer.Shell.ObjectEditing.EditorDescriptors;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
 {
@@ -10,6 +14,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
     public class WebhookFactoryBlock : BlockData, IWebhookFactory
     {
         public static int WebhookFactoryBlockFolderId { get; set; } = 0;
+        public static Dictionary<string, Type> AvailableSerializers { get; set; } = new();
 
         [Required]
         [UIHint("UrlBox")]
@@ -21,30 +26,25 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         [SelectMany(SelectionFactoryType = typeof(TypeSelectionFactory))]
         public virtual IList<string> Types { get; set; }
 
-        [SelectOne(SelectionFactoryType = typeof(MethodSelectionFactory))]
-        public virtual string Method { get; set; }
+        [Display(Name = "Webhook Type")]
+        [SelectOne(SelectionFactoryType = typeof(SerializerSelectionFactory))]
+        public virtual string WebhookType { get; set; }
 
         public string Name => $"{((IContent)this).Name} / {((IContent)this).ContentLink}";
 
         public IEnumerable<Webhook> Generate(string action, IContent content)
         {
-            IWebhookFactory baseFactory;
             var target = Target.Replace("{action}", action).Replace("{id}", ((IContent)this).ContentLink.ID.ToString());
+            var serializerType = GetTypeFromString(WebhookType);
 
-            if (Method == "GET")
+            var factory = new SimpleWebhookFactoryProfile(target)
             {
-                baseFactory = new SimplePingWebhookFactory(target);
-                ((SimplePingWebhookFactory)baseFactory).IncludeActions = Actions;
-                ((SimplePingWebhookFactory)baseFactory).IncludeTypes = Types.Select(t => Type.GetType(t)).ToList();
-            }
-            else
-            {
-                baseFactory = new PostContentWebhookFactory(target);
-                ((PostContentWebhookFactory)baseFactory).IncludeActions = Actions;
-                ((PostContentWebhookFactory)baseFactory).IncludeTypes = Types.Select(t => Type.GetType(t)).ToList();
-            }
+                IncludeActions = Actions,
+                IncludeTypes = Types.Select(t => Type.GetType(t)).ToList(),
+                Serializer = (IWebhookSerializer)Activator.CreateInstance(serializerType)
+            };
 
-            return baseFactory.Generate(action, content);
+            return factory.Process(action, content);
         }
 
         public static void RegisterFactories()
@@ -65,16 +65,26 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         {
             return new ContentReference(WebhookFactoryBlockFolderId);
         }
+
+        private Type GetTypeFromString(string typeName)
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var foundType = assembly.GetType(typeName);
+
+                if (foundType != null)
+                    return foundType;
+            }
+
+            return null;
+        }
     }
 
-    public class MethodSelectionFactory : ISelectionFactory
+    public class SerializerSelectionFactory : ISelectionFactory
     {
         public IEnumerable<ISelectItem> GetSelections(ExtendedMetadata metadata)
         {
-            return new[] {
-                new SelectItem() { Text = "GET", Value = "GET"  },
-                new SelectItem() { Text = "POST (with content)", Value = "POST"  }
-            };
+            return WebhookFactoryBlock.AvailableSerializers.Select(i => new SelectItem() { Text = i.Key, Value = i.Value.FullName });
         }
     }
 

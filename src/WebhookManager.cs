@@ -32,11 +32,21 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void Queue(string action, ContentReference contentRef)
         {
-            Queue(action, contentLoader.Get<IContent>(contentRef));
+            var content = contentLoader.Get<IContent>(contentRef);
+
+            // Do not queue for webhook factories themselves
+            if (content is IWebhookFactory)
+                return;
+
+            Queue(action, content);
         }
 
         public void Queue(string action, IContent content)
         {
+            // Do not queue for webhook factories themselves
+            if (content is IWebhookFactory)
+                return;
+
             logger.Debug($"Queue request for content {content.ContentLink} bearing action \"{action}\"");
             factory.Generate(action, content).ToList().ForEach(queue.Add);
         }
@@ -45,17 +55,29 @@ namespace DeaneBarker.Optimizely.Webhooks
 
         public void QueuePublishedWebhook(object sender, ContentEventArgs e)
         {
+            // Do not queue for webhook factories themselves
+            if (e.Content is IWebhookFactory)
+                return;
+
             Queue(Actions.Published, e.ContentLink);
         }
 
         public void QueueMovedWebhook(object sender, ContentEventArgs e)
         {
+            // Do not queue for webhook factories themselves
+            if (e.Content is IWebhookFactory)
+                return;
+
             var movingTo = ((MoveContentEventArgs)e).TargetLink;
             Queue(movingTo == ContentReference.WasteBasket ? Actions.Trashed : Actions.Moved, e.ContentLink);
         }
 
         public void QueueDeletedWebhook(object sender, DeleteContentEventArgs e)
         {
+            // Do not queue for webhook factories themselves
+            if (e.Content is IWebhookFactory)
+                return;
+
             Queue(Actions.Deleted, e.ContentLink);
         }
     }

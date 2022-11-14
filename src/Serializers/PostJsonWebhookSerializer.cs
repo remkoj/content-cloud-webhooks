@@ -12,15 +12,14 @@ using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks.Serializers
 {
-    public class PostContentWebhookSerializer : IWebhookSerializer
+    public class PostJsonWebhookSerializer : IWebhookSerializer
     {
-        private readonly ILogger logger = LogManager.GetLogger(typeof(PostContentWebhookSerializer));
+        private readonly ILogger logger = LogManager.GetLogger(typeof(PostXmlWebhookSerializer));
 
         public HttpWebRequest Serialize(Webhook webhook)
         {           
-            var requestBody = SerializeIContent(webhook.Content);
+            var requestBody = SerializeIContentAsJson(webhook.Content);
             logger.Debug($"Serialized content {webhook.Content.ContentLink} into {requestBody.Length} byte(s). ID: {webhook.Id}");
-            
 
             var request = new WebRequestBuilder()
                 .AsPost()
@@ -32,7 +31,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
         }
 
         // I broke this out to its own method so that if someone inherits this class and overrides Serialize, they don't have to figure out this code
-        protected string SerializeIContent(IContent content)
+        protected string SerializeIContentAsJson(IContent content)
         {
             var contentConvertingService = ServiceLocator.Current.GetInstance<ContentConvertingService>();
 

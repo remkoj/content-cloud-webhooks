@@ -18,7 +18,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Factories
         public ICollection<Type> ExcludeTypes { get; set; } = new List<Type>();
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
-        public IWebhookSerializer Serializer { get; set; } = new SimplePingWebhookSerializer();
+        public IWebhookSerializer Serializer { get; set; } = new GetWebhookSerializer();
 
         public string Name => GetType().Name;
 
