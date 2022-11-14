@@ -32,7 +32,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             XElement getElement(PropertyData prop)
             {
                 var elementName = char.ToLower(prop.Name[0]) + prop.Name.Substring(1);
-                var typeName = prop.PropertyValueType.UnderlyingSystemType.Name;
+                var typeName = prop.Type.ToString();
 
                 var element = new XElement(elementName, new XAttribute("type", typeName));
 
