@@ -10,7 +10,7 @@ using System.Reflection;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
 {
-    [ContentType(GUID = "AEECADF2-3E89-4117-ADEB-F8D43565D3F4")]
+    [ContentType(GUID = "AEECADF2-3E89-4117-ADEB-F8D43565D3F4", DisplayName = "Webhook Factory", GroupName = "Advanced")]
     public class WebhookFactoryBlock : BlockData, IWebhookFactory
     {
         public static int WebhookFactoryBlockFolderId { get; set; } = 0;
@@ -109,9 +109,38 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             var types = contentTypeRepository.List();
             
             var options = new List<ISelectItem>();
-            options.AddRange(types.ToList().OrderBy(t => t.Name).Select(t => new SelectItem() { Text = t.DisplayName ?? t.Name, Value = t.ModelTypeString }));
+            options.AddRange(types
+                .Where(t => !t.Name.ToLower().StartsWith("sys"))
+                .Where(t => t.Name != "WebhookFactoryBlock")
+                .Select(t => new SelectItem() {
 
-            return options;    
+                    Text = getDisplayName(t),
+                    Value = t.ModelTypeString
+
+                })
+                .OrderBy(i => i.Text));
+
+            return options;
+           
+        }
+        public string getDisplayName(ContentType t)
+        {
+            var suffix = t.Base.ToString();
+            var name = t.DisplayName ?? t.Name;
+
+            name = RemoveFromEnd(name, t.Base.ToString());
+
+            return $"{name} ({suffix})";
+        }
+
+        private string RemoveFromEnd(string input, string remove)
+        {
+            if (input.EndsWith(remove) && input != remove)
+            {
+                input = input.Substring(0, input.Length - remove.Length);
+            }
+
+            return input;
         }
     }
 
