@@ -1,5 +1,6 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Helpers;
 using EPiServer.Logging;
+using EPiServer.Validation;
 using System.Net;
 using System.Xml.Linq;
 using ILogger = EPiServer.Logging.ILogger;
@@ -9,6 +10,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
     public class PostXmlWebhookSerializer : IWebhookSerializer
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(PostXmlWebhookSerializer));
+
+        public object SerializationConfig { get; set; }
 
         public HttpWebRequest Serialize(Webhook webhook)
         {           
@@ -22,6 +25,11 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
                 .WithQuerystringArg("action", webhook.Action);
 
             return request.Build();
+        }
+
+        public IEnumerable<ValidationError> ValidateConfig(string config)
+        {
+            throw new NotImplementedException();
         }
 
         protected string SerializeIContentAsXml(IContent content)

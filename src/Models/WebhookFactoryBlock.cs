@@ -1,12 +1,12 @@
-﻿using Castle.MicroKernel.SubSystems.Conversion;
-using DeaneBarker.Optimizely.Webhooks.Factories;
+﻿using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.ServiceLocation;
 using EPiServer.Shell;
-using EPiServer.Shell.Configuration;
 using EPiServer.Shell.ObjectEditing;
 using EPiServer.Shell.ObjectEditing.EditorDescriptors;
+using EPiServer.Validation;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Reflection;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
@@ -31,19 +31,26 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         [SelectOne(SelectionFactoryType = typeof(SerializerSelectionFactory))]
         public virtual string WebhookType { get; set; }
 
+        [Display(Name = "Serialization Configuration")]
+        [ClientEditor(ClientEditingClass = "/js/editor.js")]
+        public virtual string SerializationConfig { get; set; }
+
         public string Name => $"{((IContent)this).Name} / {((IContent)this).ContentLink}";
 
         public IEnumerable<Webhook> Generate(string action, IContent content)
         {
             var target = Target.Replace("{action}", action).Replace("{id}", ((IContent)this).ContentLink.ID.ToString());
-            var serializerType = GetTypeFromString(WebhookType);
 
             var factory = new SimpleWebhookFactoryProfile(target)
             {
                 IncludeActions = Actions,
                 IncludeTypes = Types.Select(t => Type.GetType(t)).ToList(),
-                Serializer = (IWebhookSerializer)Activator.CreateInstance(serializerType)
+                Serializer = GetSerializer()
             };
+
+            // Set the config, if we even have any
+            // (I originally did this in the constructor, but then I had to require a constructor on every implementation...)
+            factory.Serializer.SerializationConfig = SerializationConfig;
 
             return factory.Process(action, content);
         }
@@ -75,6 +82,22 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
 
                 if (foundType != null)
                     return foundType;
+            }
+
+            return null;
+        }
+
+        public IWebhookSerializer GetSerializer()
+        {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var foundType = assembly.GetType(WebhookType);
+
+                if (foundType != null)
+                {
+                    var serializerType = GetTypeFromString(WebhookType);
+                    return (IWebhookSerializer)Activator.CreateInstance(serializerType);
+                }
             }
 
             return null;
@@ -115,7 +138,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
                 .Where(t => t.Name != "WebhookFactoryBlock")
                 .Select(t => new SelectItem() {
 
-                    Text = getDisplayName(t),
+                    Text = GetDisplayName(t),
                     Value = t.ModelTypeString
 
                 })
@@ -124,7 +147,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             return options;
            
         }
-        public string getDisplayName(ContentType t)
+        public string GetDisplayName(ContentType t)
         {
             var suffix = t.Base.ToString();
             var name = t.DisplayName ?? t.Name;
@@ -191,6 +214,27 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             DefaultView = CmsViewNames.AllPropertiesView;
             EnableStickyView = false;
             DisabledViews = new[] { CmsViewNames.PreviewView, CmsViewNames.OnPageEditView };
+        }
+    }
+
+    public class WebhookFactoryBlockValidator : IValidate<WebhookFactoryBlock>
+    {
+        public IEnumerable<ValidationError> Validate(WebhookFactoryBlock instance)
+        {
+            if(instance.WebhookType != null)
+            {
+                try
+                {
+                    return instance.GetSerializer().ValidateConfig(instance.SerializationConfig);
+                }
+                catch(NotImplementedException e)
+                {
+                    // If it wasn't implemented, then no errors
+                    return new List<ValidationError>();
+                }
+            }
+
+            return new List<ValidationError>();
         }
     }
 }

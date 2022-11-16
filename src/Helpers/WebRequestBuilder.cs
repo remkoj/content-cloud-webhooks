@@ -15,6 +15,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 		private Uri target { get; set; }
 		private string body { get; set; }
 		private string verb { get; set; }
+		private string contentType { get; set; }
 
 		public WebRequestBuilder WithQuerystringArg(string key, string value)
 		{
@@ -40,7 +41,13 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			return this;
 		}
 
-		public WebRequestBuilder WithBody(string body)
+        public WebRequestBuilder WithContentType(string contentType)
+        {
+            this.contentType = contentType;
+            return this;
+        }
+
+        public WebRequestBuilder WithBody(string body)
 		{
 			this.body = body;
 			return this;
@@ -70,6 +77,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			builder.Query = query.ToString();
 
 			var request = (HttpWebRequest)WebRequest.Create(builder.Uri);
+			request.ContentType = contentType;
 			request.Method = verb;
 
 			foreach (var key in headers.AllKeys)

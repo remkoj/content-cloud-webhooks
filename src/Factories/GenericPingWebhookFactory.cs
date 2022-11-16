@@ -2,6 +2,7 @@
 using DeaneBarker.Optimizely.Webhooks.Helpers;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
 using EPiServer.Core;
+using EPiServer.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,9 +25,16 @@ namespace Ayogo3.Webhooks.Factories
 
     public class UrlPingSerializer : IWebhookSerializer
     {
+        public object SerializationConfig { get; set; }
+
         public HttpWebRequest Serialize(Webhook webhook)
         {
             return new WebRequestBuilder().AsGet().ToUrl("https://cnn.com").WithQuerystringArg("action", webhook.Action.ToLower()).Build();
+        }
+
+        public IEnumerable<ValidationError> ValidateConfig(string config)
+        {
+            throw new NotImplementedException();
         }
     }
 }

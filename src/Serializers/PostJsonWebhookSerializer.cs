@@ -5,6 +5,7 @@ using EPiServer.ContentApi.Core.Serialization.Internal;
 using EPiServer.Core;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
+using EPiServer.Validation;
 using EPiServer.Web;
 using System.Net;
 using System.Text.Json;
@@ -16,6 +17,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
     {
         private readonly ILogger logger = LogManager.GetLogger(typeof(PostXmlWebhookSerializer));
 
+        public object SerializationConfig { get; set; }
+
         public HttpWebRequest Serialize(Webhook webhook)
         {           
             var requestBody = SerializeIContentAsJson(webhook.Content);
@@ -25,7 +28,8 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
                 .AsPost()
                 .ToUrl(webhook.Target)
                 .WithBody(requestBody)
-                .WithQuerystringArg("action", webhook.Action);
+                .WithQuerystringArg("action", webhook.Action)
+                .WithContentType("application/json");
 
             return request.Build();
         }
@@ -50,6 +54,11 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             var sw = new StringWriter();
             serializer.Serialize(sw, obj);
             return sw.ToString();
+        }
+
+        public IEnumerable<ValidationError> ValidateConfig(string config)
+        {
+            throw new NotImplementedException();
         }
     }
 }
