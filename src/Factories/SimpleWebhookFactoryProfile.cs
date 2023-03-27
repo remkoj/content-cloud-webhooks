@@ -1,11 +1,9 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Serializers;
-using EPiServer.Core;
+using EPiServer.DataAbstraction;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using ILogger = EPiServer.Logging.ILogger;
 
 namespace DeaneBarker.Optimizely.Webhooks
@@ -15,8 +13,8 @@ namespace DeaneBarker.Optimizely.Webhooks
         private readonly ILogger logger = LogManager.GetLogger(typeof(SimpleWebhookFactoryProfile));
 
         public Uri Target { get; set; }
-        public ICollection<Type> IncludeTypes { get; set; } = new List<Type>();
-        public ICollection<Type> ExcludeTypes { get; set; } = new List<Type>();
+        public ICollection<ContentType> IncludeTypes { get; set; } = new List<ContentType>();
+        public ICollection<ContentType> ExcludeTypes { get; set; } = new List<ContentType>();
         public ICollection<string> IncludeActions { get; set; } = new List<string>();
         public ICollection<string> ExcludeActions { get; set; } = new List<string>();
         public IWebhookSerializer Serializer { get; set; }
@@ -47,11 +45,11 @@ namespace DeaneBarker.Optimizely.Webhooks
                 return null;
             }
 
-            var type = content.GetType().BaseType;
+            var contentTypeID = content.ContentTypeID;
 
-            if (ExcludeTypes.Contains(type))
+            if (ExcludeTypes.Any(et => et.ID == contentTypeID))
             {
-                logger.Debug($"Webhook not produced. {type} is an excluded type");
+                logger.Debug($"Webhook not produced. { content.ContentGuid } is of an excluded type");
                 return null;
             }
 
@@ -61,9 +59,9 @@ namespace DeaneBarker.Optimizely.Webhooks
                 return null;
             }
 
-            if (IncludeTypes.Any() && !IncludeTypes.Contains(type))
+            if (IncludeTypes.Any() && !IncludeTypes.Any(it => it.ID == contentTypeID))
             {
-                logger.Debug($"Webhook not produced. {type} is not an included type");
+                logger.Debug($"Webhook not produced. { content.ContentGuid } is not of an included type");
                 return null;
             }
 

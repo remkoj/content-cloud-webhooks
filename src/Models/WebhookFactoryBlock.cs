@@ -1,22 +1,22 @@
 ﻿using DeaneBarker.Optimizely.Webhooks.Factories;
 using DeaneBarker.Optimizely.Webhooks.Serializers;
+using DeaneBarker.Optimizely.Webhooks.Blocks.Editing;
 using EPiServer.ServiceLocation;
-using EPiServer.Shell;
 using EPiServer.Shell.ObjectEditing;
-using EPiServer.Shell.ObjectEditing.EditorDescriptors;
-using EPiServer.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Reflection;
+using EPiServer.Cms.Shell;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
 {
-    [ContentType(GUID = "AEECADF2-3E89-4117-ADEB-F8D43565D3F4", DisplayName = "Webhook Factory", GroupName = "Advanced")]
+    [ContentType(
+        GUID = "AEECADF2-3E89-4117-ADEB-F8D43565D3F4", 
+        DisplayName = "Webhook Factory", 
+        Description = "Add/manage a webhook",
+        GroupName = "Advanced"
+    )]
     public class WebhookFactoryBlock : BlockData, IWebhookFactory
     {
-        public static int WebhookFactoryBlockFolderId { get; set; } = 0;
-        public static Dictionary<string, Type> AvailableSerializers { get; set; } = new();
-
         [Required]
         [UIHint("UrlBox")]
         public virtual string Target { get; set; }
@@ -32,10 +32,12 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
         public virtual string WebhookType { get; set; }
 
         [Display(Name = "Serialization Configuration")]
-        [ClientEditor(ClientEditingClass = "/js/editor.js")]
+        [ClientEditor(ClientEditingClass = "webhooks/Editor")]
         public virtual string SerializationConfig { get; set; }
 
         public string Name => $"{((IContent)this).Name} / {((IContent)this).ContentLink}";
+
+        public string FactoryID => ((IContent)this).ContentGuid.ToString();
 
         public IEnumerable<Webhook> Generate(string action, IContent content)
         {
@@ -44,7 +46,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             var factory = new SimpleWebhookFactoryProfile(target)
             {
                 IncludeActions = Actions,
-                IncludeTypes = Types.Select(t => Type.GetType(t)).ToList(),
+                IncludeTypes = Types.Select(t => TypeSelectionFactory.ResolveValue(t)).ToList(),
                 Serializer = GetSerializer()
             };
 
@@ -55,186 +57,22 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
             return factory.Process(action, content);
         }
 
-        public static void RegisterFactories()
+        public static IEnumerable<WebhookFactoryBlock> GetAllInstances()
         {
-            var webhookSettings = ServiceLocator.Current.GetInstance<WebhookSettings>();
-
+            var contentModelUsage = ServiceLocator.Current.GetInstance<IContentModelUsage>();
             var contentLoader = ServiceLocator.Current.GetInstance<IContentLoader>();
-            var webhooksFolder = GetWebhooksFolderRoot();
-            var webhookFactories = contentLoader.GetChildren<BlockData>(webhooksFolder);
-            foreach(var f in webhookFactories.Where(i => i is WebhookFactoryBlock).Cast<WebhookFactoryBlock>())
-            {
-                webhookSettings.RegisterWebhookFactory(f, ((IContent)f).ContentGuid.ToString());
-            }
-
-        }
-
-        public static ContentReference GetWebhooksFolderRoot()
-        {
-            return new ContentReference(WebhookFactoryBlockFolderId);
-        }
-
-        private Type GetTypeFromString(string typeName)
-        {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var foundType = assembly.GetType(typeName);
-
-                if (foundType != null)
-                    return foundType;
-            }
-
-            return null;
-        }
-
-        public IWebhookSerializer GetSerializer()
-        {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var foundType = assembly.GetType(WebhookType);
-
-                if (foundType != null)
-                {
-                    var serializerType = GetTypeFromString(WebhookType);
-                    return (IWebhookSerializer)Activator.CreateInstance(serializerType);
-                }
-            }
-
-            return null;
-        }
-    }
-
-    public class SerializerSelectionFactory : ISelectionFactory
-    {
-        public IEnumerable<ISelectItem> GetSelections(ExtendedMetadata metadata)
-        {
-            return WebhookFactoryBlock.AvailableSerializers.Select(i => new SelectItem() { Text = i.Key, Value = i.Value.FullName });
-        }
-    }
-
-    public class ActionSelectionFactory : ISelectionFactory
-    {
-        public IEnumerable<ISelectItem> GetSelections(ExtendedMetadata metadata)
-        {
-            return new[] {
-                new SelectItem() { Text = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Actions.Published), Value = Actions.Published  },
-                new SelectItem() { Text = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Actions.Moved), Value = Actions.Moved},
-                new SelectItem() { Text = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Actions.Trashed), Value = Actions.Trashed},
-                new SelectItem() { Text = Thread.CurrentThread.CurrentCulture.TextInfo.ToTitleCase(Actions.Deleted), Value = Actions.Deleted  }
-            };
-        }
-    }
-
-    public class TypeSelectionFactory : ISelectionFactory
-    {
-        public IEnumerable<ISelectItem> GetSelections(ExtendedMetadata metadata)
-        {
             var contentTypeRepository = ServiceLocator.Current.GetInstance<IContentTypeRepository>();
-            var types = contentTypeRepository.List();
-            
-            var options = new List<ISelectItem>();
-            options.AddRange(types
-                .Where(t => !t.Name.ToLower().StartsWith("sys"))
-                .Where(t => t.Name != "WebhookFactoryBlock")
-                .Select(t => new SelectItem() {
 
-                    Text = GetDisplayName(t),
-                    Value = t.ModelTypeString
-
-                })
-                .OrderBy(i => i.Text));
-
-            return options;
-           
-        }
-        public string GetDisplayName(ContentType t)
-        {
-            var suffix = t.Base.ToString();
-            var name = t.DisplayName ?? t.Name;
-
-            name = RemoveFromEnd(name, t.Base.ToString());
-
-            return $"{name} ({suffix})";
+            var webhookBlockType = contentTypeRepository.Load<WebhookFactoryBlock>();
+            return contentModelUsage.ListContentOfContentType(webhookBlockType)
+                .GroupBy(f => f.ContentLink.ToReferenceWithoutVersion())
+                .Select(g => contentLoader.Get<WebhookFactoryBlock>(g.First().ContentLink.ToReferenceWithoutVersion()))
+                .Where(b => 
+                    ((IContent)b).ParentLink != ContentReference.WasteBasket && 
+                    ((IContent)b).IsPublished()
+                );
         }
 
-        private string RemoveFromEnd(string input, string remove)
-        {
-            if (input.EndsWith(remove) && input != remove)
-            {
-                input = input.Substring(0, input.Length - remove.Length);
-            }
-
-            return input;
-        }
-    }
-
-    [EditorDescriptorRegistration(TargetType = typeof(IList<String>), EditorDescriptorBehavior = EditorDescriptorBehavior.ExtendBase)]
-    public class StringListEditorDescriptor : EditorDescriptor
-    {
-        public override void ModifyMetadata(ExtendedMetadata metadata, IEnumerable<Attribute> attributes)
-        {
-            //Episervers check box editor handles valus as csv, aka comma separated sting, as default.
-            //Need to make sure that the value is handled as an array.
-            metadata.EditorConfiguration["valueIsCsv"] = false;
-        }
-    }
-
-    [EditorDescriptorRegistration(TargetType = typeof(string), UIHint = "UrlBox", EditorDescriptorBehavior = EditorDescriptorBehavior.ExtendBase)]
-    public class UrlBoxEditorDescriptor : EditorDescriptor
-    {
-        public override void ModifyMetadata(ExtendedMetadata metadata, IEnumerable<Attribute> attributes)
-        {
-            base.ModifyMetadata(metadata, attributes);
-            metadata.EditorConfiguration.Add("style", "width: 600px; font-size: 130%; font-family: consolas; padding: 5px;");
-        }
-    }
-
-    // Hide the category selector...
-    [EditorDescriptorRegistration(TargetType = typeof(CategoryList))]
-    public class HideCategoryEditorDescriptor : EditorDescriptor
-    {
-        public override void ModifyMetadata(
-           ExtendedMetadata metadata,
-           IEnumerable<Attribute> attributes)
-        {
-            base.ModifyMetadata(metadata, attributes);
-            if (metadata.PropertyName == "icategorizable_category")
-            {
-                metadata.GroupName = SystemTabNames.Settings;
-            }
-        }
-    }
-
-
-    [UIDescriptorRegistration]
-    public class WebhookFactoryBlockUIDescriptor : UIDescriptor<WebhookFactoryBlock>
-    {
-        public WebhookFactoryBlockUIDescriptor() : base()
-        {
-            DefaultView = CmsViewNames.AllPropertiesView;
-            EnableStickyView = false;
-            DisabledViews = new[] { CmsViewNames.PreviewView, CmsViewNames.OnPageEditView };
-        }
-    }
-
-    public class WebhookFactoryBlockValidator : IValidate<WebhookFactoryBlock>
-    {
-        public IEnumerable<ValidationError> Validate(WebhookFactoryBlock instance)
-        {
-            if(instance.WebhookType != null)
-            {
-                try
-                {
-                    return instance.GetSerializer().ValidateConfig(instance.SerializationConfig);
-                }
-                catch(NotImplementedException e)
-                {
-                    // If it wasn't implemented, then no errors
-                    return new List<ValidationError>();
-                }
-            }
-
-            return new List<ValidationError>();
-        }
+        public IWebhookSerializer GetSerializer() => SerializerSelectionFactory.ResolveValue(WebhookType);
     }
 }

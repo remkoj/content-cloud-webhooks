@@ -1,13 +1,8 @@
-﻿using DeaneBarker.Optimizely.Webhooks.Blocks;
-using EPiServer;
+﻿using EPiServer;
 using EPiServer.Core;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.ServiceLocation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace DeaneBarker.Optimizely.Webhooks.Blocks
 {
@@ -15,38 +10,55 @@ namespace DeaneBarker.Optimizely.Webhooks.Blocks
     [ModuleDependency(typeof(WebhooksInit))]
     public class WebhookFactoryBlockInit : IInitializableModule
     {
+        protected static IContentEvents ContentEvents => ServiceLocator.Current.GetInstance<IContentEvents>();
+        protected static WebhookSettings WebhookSettings => ServiceLocator.Current.GetInstance<WebhookSettings>();
+
         public void Initialize(InitializationEngine context)
         {
-            WebhookFactoryBlock.RegisterFactories();
-
-            // If anything in the Webhooks folder is published, re-register all the blocks
-            var contentEvents = ServiceLocator.Current.GetInstance<IContentEvents>();
-
-            contentEvents.PublishedContent += (object s, ContentEventArgs e) =>
-            {
-                if (e.Content.ParentLink == WebhookFactoryBlock.GetWebhooksFolderRoot())
-                {
-                    WebhookFactoryBlock.RegisterFactories();
-                }
-
-            };
-
-            contentEvents.MovedContent += (object s, ContentEventArgs e) =>
-            {
-
-                if (((MoveContentEventArgs)e).OriginalParent == WebhookFactoryBlock.GetWebhooksFolderRoot())
-                {
-                    WebhookFactoryBlock.RegisterFactories();
-                }
-
-            };
+            RegisterFactories();
+            ContentEvents.DeletedContent += ContentEvents_DeletedContent;
+            ContentEvents.PublishedContent += ContentEvents_PublishedContent;
+            ContentEvents.MovedContent += ContentEvents_MovedContent;
         }
 
         public void Uninitialize(InitializationEngine context)
         {
-            throw new NotImplementedException();
+            ContentEvents.DeletedContent -= ContentEvents_DeletedContent;
+            ContentEvents.MovedContent -= ContentEvents_MovedContent;
+            ContentEvents.PublishedContent -= ContentEvents_PublishedContent;
         }
+
+        private void ContentEvents_MovedContent(object sender, ContentEventArgs e)
+        {
+            if (e.Content is WebhookFactoryBlock factoryBlock)
+            {
+                if (((IContent)factoryBlock).ParentLink == ContentReference.WasteBasket)
+                    RemoveFactory(factoryBlock);
+                else
+                    RegisterFactory(factoryBlock);
+            }
+        }
+
+        private void ContentEvents_PublishedContent(object sender, ContentEventArgs e)
+        {
+            if (e.Content is WebhookFactoryBlock factoryBlock)
+                RegisterFactory(factoryBlock);
+        }
+
+        private void ContentEvents_DeletedContent(object sender, DeleteContentEventArgs e)
+        {
+            if (e.Content is WebhookFactoryBlock factoryBlock)
+                RemoveFactory(factoryBlock);
+        }
+
+
+        public static void RegisterFactories() =>
+            WebhookFactoryBlock.GetAllInstances().ForEach(RegisterFactory);
+
+        public static void RegisterFactory(WebhookFactoryBlock instance) =>
+            WebhookSettings.RegisterWebhookFactory(instance, instance.FactoryID);
+
+        public static void RemoveFactory(WebhookFactoryBlock instance) =>
+            WebhookSettings.RemoveWebhookFactory(instance.FactoryID);
     }
-
-
 }
