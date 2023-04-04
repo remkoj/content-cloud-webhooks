@@ -1,6 +1,4 @@
-﻿using EPiServer;
-using EPiServer.Core;
-using EPiServer.Framework;
+﻿using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.ServiceLocation;
 

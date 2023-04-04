@@ -6,6 +6,7 @@ using EPiServer.Core;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.ServiceLocation;
+using EPiServer.Shell.Modules;
 
 namespace DeaneBarker.Optimizely.Webhooks
 {
@@ -36,6 +37,9 @@ namespace DeaneBarker.Optimizely.Webhooks
 
             // Executes all the IWebhookFactoryProfiles to produce webhooks
             context.Services.AddSingleton<WebhookFactoryManager, WebhookFactoryManager>();
+
+            // Register the Shell Client side resources
+            context.Services.Configure<ProtectedModuleOptions>(o => o.Items.Add(new ModuleDetails { Name = "DeaneBarker.Optimizely.Webhooks" }));
         }
 
         public void Initialize(InitializationEngine context)
