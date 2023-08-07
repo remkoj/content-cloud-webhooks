@@ -80,7 +80,7 @@ namespace DeaneBarker.Optimizely.Webhooks.Helpers
 			request.ContentType = contentType;
 			request.Method = verb;
 
-			foreach (var key in headers.AllKeys)
+			foreach (var key in headers.AllKeys) if (key is not null)
 			{
 				request.Headers.Add(key, headers[key]);
 			}

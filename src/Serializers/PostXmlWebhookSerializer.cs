@@ -32,28 +32,28 @@ namespace DeaneBarker.Optimizely.Webhooks.Serializers
             throw new NotImplementedException();
         }
 
-        protected string SerializeIContentAsXml(IContent content)
+        protected static string SerializeIContentAsXml(IContent content)
         {
             var doc = new XDocument(new XElement("object", content.Property.Select(p => getElement(p))));
             return doc.ToString();
 
-            XElement getElement(PropertyData prop)
+            static XElement getElement(PropertyData prop)
             {
-                var elementName = char.ToLower(prop.Name[0]) + prop.Name.Substring(1);
+                var elementName = char.ToLower(prop.Name[0]) + prop.Name[1..];
                 var typeName = prop.Type.ToString();
 
                 var element = new XElement(elementName, new XAttribute("type", typeName));
 
-                if (prop.Value == null)
+                if (prop.Value is null)
                     return element;
 
-                if (prop.Value.ToString().Contains("<"))
+                if (prop.Value?.ToString()?.Contains('<') ?? false)
                 {
-                    element.Add(new XCData(prop.Value.ToString()));
+                    element.Add(new XCData(prop.Value?.ToString() ?? string.Empty));
                     return element;
                 }
 
-                element.Value = prop.Value.ToString();
+                element.Value = prop.Value?.ToString() ?? string.Empty;
                 return element;
             }
         }
